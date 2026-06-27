@@ -3,8 +3,9 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(244, 246, 248, 0.86)),
     var(--bg);
   display: grid;
-  grid-template-columns: 272px minmax(0, 1fr);
-  min-height: 100vh;
+  grid-template-columns: 240px minmax(0, 1fr);
+  height: 100%;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -14,6 +15,8 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-height: 0;
+  overflow-y: auto;
   padding: 22px;
 }
 
@@ -89,10 +92,13 @@
 }
 
 .workspace {
+  container: workspace / inline-size;
   display: grid;
   gap: 18px;
   grid-auto-rows: min-content;
+  min-height: 0;
   min-width: 0;
+  overflow-y: auto;
   padding: 22px;
 }
 
@@ -102,18 +108,16 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: var(--shadow);
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 16px;
-  grid-template-columns: minmax(160px, 0.62fr) minmax(280px, 1.4fr) minmax(
-      210px,
-      0.78fr
-    );
   min-width: 0;
   padding: 16px;
 }
 
 .topbar-title {
   display: grid;
+  flex: 1 1 160px;
   gap: 3px;
 }
 
@@ -132,6 +136,7 @@
 .repo-path-control,
 .profile-picker {
   display: grid;
+  flex: 1 1 260px;
   gap: 6px;
   min-width: 0;
 }
@@ -174,7 +179,7 @@
 .status-strip {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
   min-width: 0;
 }
 
@@ -214,14 +219,14 @@
 .review-layout {
   display: grid;
   gap: 16px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   min-width: 0;
 }
 
 .profiles-layout {
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(320px, 0.92fr) minmax(0, 1.08fr);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   min-width: 0;
 }
 
@@ -260,7 +265,7 @@
 .identity-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
 
 .compact-list {
@@ -525,49 +530,17 @@
   }
 }
 
-@media (max-width: 1120px) {
-  .topbar,
-  .status-strip {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .topbar-title {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 920px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    min-height: auto;
-  }
-
-  .panel-grid,
-  .review-layout,
-  .profiles-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .workspace,
-  .sidebar {
-    padding: 16px;
-  }
-
-  .topbar,
-  .status-strip {
-    grid-template-columns: 1fr;
-  }
-
+/*
+ * Pane-relative adaptation. A native client reflows by the width of its own
+ * content pane, not the browser viewport — so this is a @container query keyed
+ * to the .workspace size container, not an @media viewport breakpoint. The
+ * fluid auto-fit grids above already reflow cards on their own; this only
+ * handles the controls that need to stack when the pane itself gets narrow.
+ * It rarely triggers because the window minWidth keeps the pane wide, but it
+ * keeps the layout graceful at the floor.
+ */
+@container workspace (max-width: 540px) {
   .inline-control {
-    grid-template-columns: 1fr;
-  }
-
-  .identity-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }

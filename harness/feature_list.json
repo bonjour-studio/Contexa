@@ -10,80 +10,124 @@
     "not_started": "功能还没开始做。",
     "in_progress": "这个功能是当前唯一正在进行的任务。",
     "blocked": "因为已记录的阻塞问题，当前无法继续推进。",
-    "passing": "要求的验证已经通过，并且证据已经记录。"
+    "passing": "要求的验证已经通过，并且证据已经记录。",
+    "superseded": "已被另一个功能重新规划取代，保留作为历史记录。"
   },
+  "plan": "v1 多项目 Git 上下文控制台。两级导航：Projects 列表 → 项目工作台（Overview / Git Identity）；Profiles 为不绑定项目的复用库；Settings 为应用级设置。窗口按客户端方式自适应并有最小尺寸。每个独立小模块单独验证并提交。详见 .claude/plans 中已批准的方案。",
   "features": [
     {
-      "id": "ctx-001",
+      "id": "ctx-101",
       "priority": 1,
-      "area": "project-selection",
-      "title": "选择并记住当前项目",
-      "user_visible_behavior": "用户可以选择一个本地项目目录，并在主界面看到当前项目路径和基础状态。",
-      "status": "in_progress",
+      "area": "desktop-shell",
+      "title": "原生窗口尺寸与按窗格自适应布局",
+      "user_visible_behavior": "窗口有最小尺寸，缩到下限后不再变小；内容按内容窗格宽度回流（像客户端应用，而不是按浏览器视口的网页响应式）；关闭重开能恢复上次窗口大小与位置。",
+      "status": "passing",
       "verification": [
-        "运行 `cd desktop && bun run tauri dev` 打开应用。",
-        "选择一个本地项目目录。",
-        "确认主界面显示所选项目路径。",
-        "关闭并重启应用，确认仍能恢复上次选择或清晰提示重新选择。"
+        "`cd desktop && bun run build`",
+        "`cd desktop/src-tauri && cargo check`",
+        "`cd desktop && bun run tauri build`",
+        "dev run 手动确认：缩到最小尺寸不再变小、面板按窗格宽度回流、关闭重开恢复上次窗口几何。"
       ],
       "evidence": [
-        "2026-06-27 仓库路径控件已改为只读显示 + Tauri 目录选择器，用户不能手输目录路径。",
-        "2026-06-27 SSH key 路径控件已改为只读显示 + Tauri 文件选择器，避免路径手输。",
-        "2026-06-27 `cd desktop && bun run build`、`cd desktop/src-tauri && cargo check`、`cd desktop && bun run tauri build` 通过。"
+        "2026-06-27 `cd desktop && bun run build` 成功（tsc + vite）。",
+        "2026-06-27 `cd desktop/src-tauri && cargo check` 成功，编译 tauri-plugin-window-state v2.4.1；tauri-build(build.rs) 在编译期解析并校验了含 minWidth/minHeight/center 的 tauri.conf.json。",
+        "2026-06-27 `cd desktop && bun run tauri build` 通过，约 1m28s 完成 release 构建并生成 Contexa.app 与 .dmg。"
       ],
-      "notes": "Phase 1 roadmap entry: project selection. 当前仅完成目录选择器入口；关闭并重启后的当前项目恢复还未实现，不能标记 passing。"
+      "notes": "tauri.conf.json 设 width 1120/height 760/minWidth 880/minHeight 620/center；新增 tauri-plugin-window-state 记忆几何；workbench.css 用 fill-height 外壳 + 内部滚动 + auto-fit 网格 + 单个 @container 查询替换全部 @media 视口断点。运行期几何记忆与最小尺寸为 Tauri/插件原生行为，未做 GUI 人工点击验证。"
+    },
+    {
+      "id": "ctx-102",
+      "priority": 2,
+      "area": "navigation",
+      "title": "两级导航外壳与 Profiles 复用库分区",
+      "user_visible_behavior": "左侧顶层分区为 Projects / Profiles / Settings；Profiles 是不绑定任何项目的复用库；Settings 是应用级设置（v1 先放 About/版本）。",
+      "status": "not_started",
+      "verification": [
+        "`cd desktop && bun run build`",
+        "在 Projects / Profiles / Settings 之间切换，确认各分区独立、Profiles 不依赖已选项目。"
+      ],
+      "evidence": [],
+      "notes": "用手写视图状态，不引入路由库。沿用现有 ProfilesPanel 放入 Profiles 分区。"
+    },
+    {
+      "id": "ctx-103",
+      "priority": 3,
+      "area": "project-management",
+      "title": "多项目列表与持久化",
+      "user_visible_behavior": "用户可以添加多个本地项目，在项目列表里看到每个项目的名称、路径、分支、远端和身份匹配状态，可打开或移除；重启后列表与上次打开项保留。",
+      "status": "not_started",
+      "verification": [
+        "`cd desktop && bun run build`",
+        "`cd desktop/src-tauri && cargo check`",
+        "`cd desktop && bun run tauri build`",
+        "添加 2 个仓库，重启应用，确认列表持久化、状态徽标渲染。"
+      ],
+      "evidence": [],
+      "notes": "取代 ctx-001（单项目）。Rust 新增 Project 模型与 list/add/remove/set_current/get_current 命令，扩展 AppStorage。身份匹配由 create_apply_plan().changes.len()==0 推导，按需计算。"
+    },
+    {
+      "id": "ctx-104",
+      "priority": 4,
+      "area": "project-workbench",
+      "title": "项目工作台 Overview 与关联 Profile",
+      "user_visible_behavior": "打开某个项目后进入它的工作台 Overview：项目状态、本地 git 配置、已关联 Profile 的 matched/drift、本项目的应用历史；可为项目关联/取消关联一个 Profile。",
+      "status": "not_started",
+      "verification": [
+        "`cd desktop && bun run build`",
+        "`cd desktop/src-tauri && cargo check`",
+        "打开项目、关联 Profile，确认显示 matched/drift。"
+      ],
+      "evidence": [],
+      "notes": "实现 ctx-003 仪表盘目标。复用并适配 OverviewPanel；Rust 新增 link_profile_to_project 命令。"
+    },
+    {
+      "id": "ctx-105",
+      "priority": 5,
+      "area": "project-workbench",
+      "title": "在工作台内应用 Git 身份",
+      "user_visible_behavior": "在项目工作台的 Git Identity 页中，对当前项目 + 已关联 Profile 执行 preflight、diff、apply 和 ssh/remote 连接测试，应用历史按 repo 记录。",
+      "status": "not_started",
+      "verification": [
+        "`cd desktop && bun run build`",
+        "`cd desktop/src-tauri && cargo check`",
+        "`cd desktop && bun run tauri build`",
+        "在一个临时仓库走完整 apply 流程，确认 diff/preflight/连接测试与历史记录。"
+      ],
+      "evidence": [],
+      "notes": "复用并适配现有 ReviewPanel 与 Rust 的 create_apply_plan/run_preflight/apply_profile/test_* 命令，写入仍为 `git config --local`。"
     },
     {
       "id": "ctx-002",
-      "priority": 2,
+      "priority": 6,
       "area": "project-scanner",
       "title": "扫描项目上下文文件",
       "user_visible_behavior": "用户选择项目后，可以看到规则文件、MCP 配置、环境声明、Git/SSH 引用等上下文文件是否存在。",
       "status": "not_started",
       "verification": [
         "准备一个包含项目规则文件、`.mcp.json`、`.envrc` 或 Git 配置的测试项目。",
-        "在 Contexa 中选择该项目。",
-        "确认扫描结果列出检测到的上下文文件和缺失项。",
+        "在 Contexa 中打开该项目，确认扫描结果列出检测到的上下文文件和缺失项。",
         "确认敏感内容不会被明文显示。"
       ],
       "evidence": [],
-      "notes": "Do not read or print private keys, tokens, or plaintext `.env` values."
-    },
-    {
-      "id": "ctx-003",
-      "priority": 3,
-      "area": "dashboard",
-      "title": "展示项目上下文仪表盘",
-      "user_visible_behavior": "用户可以在一个工作台界面中看到项目状态、风险、差异和下一步动作。",
-      "status": "not_started",
-      "verification": [
-        "打开已选择项目的主界面。",
-        "确认页面展示项目路径、扫描状态、风险摘要和推荐动作。",
-        "确认空状态、加载状态和扫描失败状态都可理解。",
-        "运行 `cd desktop && bun run build`。"
-      ],
-      "evidence": [],
-      "notes": "UI should be dense, work-focused, and aligned with desktop subproject conventions."
+      "notes": "Phase 2 future。Do not read or print private keys, tokens, or plaintext `.env` values。"
     },
     {
       "id": "ctx-004",
-      "priority": 4,
+      "priority": 7,
       "area": "rules-and-mcp",
       "title": "查看并原地编辑规则和 MCP 配置",
       "user_visible_behavior": "用户可以查看项目规则文件和 MCP 配置，并在应用内原地编辑。",
       "status": "not_started",
       "verification": [
-        "选择包含规则文件和 MCP 配置的测试项目。",
-        "打开规则或 MCP 配置详情。",
-        "修改一个非敏感字段。",
-        "确认应用展示写入前 diff，并且只写入用户确认的项目内文件。"
+        "打开包含规则文件和 MCP 配置的项目。",
+        "修改一个非敏感字段，确认应用展示写入前 diff，并且只写入用户确认的项目内文件。"
       ],
       "evidence": [],
-      "notes": "Writes must support dry-run/diff before apply."
+      "notes": "Phase 2/3 future。Writes must support dry-run/diff before apply。"
     },
     {
       "id": "ctx-005",
-      "priority": 5,
+      "priority": 8,
       "area": "policy-diff-validation",
       "title": "校验写入范围和敏感数据风险",
       "user_visible_behavior": "用户在应用任何配置变更前，可以看到写入范围、敏感数据风险和可撤销的 diff。",
@@ -91,27 +135,49 @@
       "verification": [
         "尝试写入项目目录内允许的配置文件，确认 diff 可见且可应用。",
         "尝试写入项目目录外路径，确认操作被拒绝。",
-        "尝试保存明显的 token 或私钥样式内容，确认应用阻止或警告。",
-        "运行 `cd desktop && bun run build` 和 `cd desktop/src-tauri && cargo check`。"
+        "尝试保存明显的 token 或私钥样式内容，确认应用阻止或警告。"
       ],
       "evidence": [],
-      "notes": "Must preserve repo security red lines."
+      "notes": "Phase 3 future，把 git 之外的写入也纳入统一 policy/diff。Must preserve repo security red lines。"
     },
     {
       "id": "ctx-006",
-      "priority": 6,
+      "priority": 9,
       "area": "launcher",
       "title": "带项目上下文启动开发工具",
       "user_visible_behavior": "用户可以从 Contexa 启动受支持的开发工具，并只向当前进程树注入项目上下文。",
       "status": "not_started",
       "verification": [
-        "配置一个测试项目的工具启动项。",
-        "从 Contexa 启动目标工具。",
+        "配置一个测试项目的工具启动项，从 Contexa 启动目标工具。",
         "确认启动进程使用当前项目目录和声明的上下文引用。",
         "确认不会修改全局 shell、Git 或 SSH 配置。"
       ],
       "evidence": [],
-      "notes": "No global config writes by default."
+      "notes": "Phase 4 future。No global config writes by default。"
+    },
+    {
+      "id": "ctx-001",
+      "priority": 10,
+      "area": "project-selection",
+      "title": "选择并记住当前项目",
+      "user_visible_behavior": "用户可以选择一个本地项目目录，并在主界面看到当前项目路径和基础状态。",
+      "status": "superseded",
+      "verification": [],
+      "evidence": [
+        "2026-06-27 仓库路径控件已改为只读显示 + Tauri 目录选择器，用户不能手输目录路径。"
+      ],
+      "notes": "被 ctx-103（多项目列表 + 持久化）重新规划取代。单项目目录选择器已落地并保留为 ctx-103 的输入控件，多项目管理在 ctx-103 实现重启恢复。"
+    },
+    {
+      "id": "ctx-003",
+      "priority": 11,
+      "area": "dashboard",
+      "title": "展示项目上下文仪表盘",
+      "user_visible_behavior": "用户可以在一个工作台界面中看到项目状态、风险、差异和下一步动作。",
+      "status": "superseded",
+      "verification": [],
+      "evidence": [],
+      "notes": "被 ctx-104（项目工作台 Overview）重新规划取代，作为每个项目内的 Overview 页实现。"
     }
   ]
 }

@@ -9,16 +9,16 @@
 
 ## 本轮改动
 
-- 新增了哪些代码或行为：桌面 UI 从旧 GitScope 风格调整为 Contexa 工作台；profile 表单中的真实姓名占位已换成泛化占位；新增 `lucide-react` 图标依赖。
+- 新增了哪些代码或行为：当前分支 7 个提交的 author/committer 时间均整体后移一天；桌面 UI 从旧 GitScope 风格调整为 Contexa 工作台；profile 表单中的真实姓名占位已换成泛化占位；新增 `lucide-react` 图标依赖。
 - 前端组织结构：`App.tsx` 只保留页面组合；类型进入 `desktop/src/domain/`；Tauri API client 保留在 `desktop/src/services/`；状态流程进入 `desktop/src/hooks/`；通用 UI 进入 `desktop/src/components/`；三个工作区页面进入 `desktop/src/features/workspace/`；格式化工具进入 `desktop/src/lib/`；样式拆成 `desktop/src/styles/base.css` 和 `desktop/src/styles/workbench.css`。
 - 目录/文件路径选择：`Repository path` 改为只读显示 + Tauri 目录选择器；SSH key 路径改为只读显示 + Tauri 文件选择器；主窗口 capability 添加 `dialog:allow-open`。
-- 基础设施或 harness 发生了哪些变化：`harness/progress.md` 记录本轮证据与风险。
+- 基础设施或 harness 发生了哪些变化：`harness/feature_list.json` 新增已完成的 `ctx-000` 维护项；`harness/progress.md` 记录本轮证据与风险。
 
 ## 仍损坏或未验证
 
 - 已知缺陷：无已知缺陷。
 - 未验证路径：完整 Tauri dev app 人工点击路径尚未验证；`ctx-001` 的重启后项目恢复还未实现。
-- 下一轮会话需要注意的风险：没有测试脚本时，不要把 build/check 误认为完整端到端验证。
+- 下一轮会话需要注意的风险：本地 `main` 已重写历史，相对 `origin/main` 显示 ahead 7 / behind 7；`filter-branch` 留有 `refs/original/refs/heads/main` 本地恢复引用；未 stage、未 commit、未 push。没有测试脚本时，不要把 build/check 误认为完整端到端验证。
 
 ## 下一步最佳动作
 
