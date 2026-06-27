@@ -54,6 +54,9 @@ export const gitscopeApi = {
   getCurrentProject() {
     return invoke<Project | null>("get_current_project");
   },
+  linkProfileToProject(projectId: string, profileId: string | null) {
+    return invoke<Project>("link_profile_to_project", { projectId, profileId });
+  },
   listApplyHistory() {
     return invoke<ApplyHistoryItem[]>("list_apply_history");
   },

@@ -396,6 +396,49 @@ fn get_current_project(app: tauri::AppHandle) -> CommandResult<Option<Project>> 
 }
 
 #[tauri::command]
+fn link_profile_to_project(
+    app: tauri::AppHandle,
+    project_id: String,
+    profile_id: Option<String>,
+) -> CommandResult<Project> {
+    let id = project_id.trim();
+    let mut storage = read_storage(&app)?;
+
+    let Some(index) = storage.projects.iter().position(|project| project.id == id) else {
+        return Err(CommandError::new(
+            "project_not_found",
+            "That project is no longer in the list.",
+        ));
+    };
+
+    let linked = profile_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned);
+
+    // Linking to a profile requires it to still exist; unlinking passes None.
+    if let Some(profile_id) = linked.as_deref() {
+        if !storage
+            .profiles
+            .iter()
+            .any(|profile| profile.id == profile_id)
+        {
+            return Err(CommandError::new(
+                "profile_not_found",
+                "That profile no longer exists.",
+            ));
+        }
+    }
+
+    storage.projects[index].linked_profile_id = linked;
+    let project = storage.projects[index].clone();
+    write_storage(&app, &storage)?;
+
+    Ok(project)
+}
+
+#[tauri::command]
 fn list_apply_history(app: tauri::AppHandle) -> CommandResult<Vec<ApplyHistoryItem>> {
     Ok(read_storage(&app)?.apply_history)
 }
@@ -1194,6 +1237,7 @@ pub fn run() {
             remove_project,
             set_current_project,
             get_current_project,
+            link_profile_to_project,
             list_apply_history,
             check_ssh_key,
             create_apply_plan,

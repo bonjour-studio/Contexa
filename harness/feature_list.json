@@ -77,14 +77,17 @@
       "area": "project-workbench",
       "title": "项目工作台 Overview 与关联 Profile",
       "user_visible_behavior": "打开某个项目后进入它的工作台 Overview：项目状态、本地 git 配置、已关联 Profile 的 matched/drift、本项目的应用历史；可为项目关联/取消关联一个 Profile。",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "`cd desktop && bun run build`",
         "`cd desktop/src-tauri && cargo check`",
         "打开项目、关联 Profile，确认显示 matched/drift。"
       ],
-      "evidence": [],
-      "notes": "实现 ctx-003 仪表盘目标。复用并适配 OverviewPanel；Rust 新增 link_profile_to_project 命令。"
+      "evidence": [
+        "2026-06-27 `cd desktop && bun run build` 成功（66 模块，workbench Overview 已接入）。",
+        "2026-06-27 `cd desktop/src-tauri && cargo check` 成功，含新增 `link_profile_to_project` 命令与 handler 注册。"
+      ],
+      "notes": "实现 ctx-003 仪表盘目标。workbench Overview 做实：状态条（branch/remote/identity/applies）+ 本地 git 配置 matched/drift 卡片 + 关联 Profile 选择器 + 本项目应用历史。matched/drift 由 `createApplyPlan().changes.length===0` 推导（store 中按 openProject+linkedProfile+status 计算）；非 git 目录显示「No repo」。新增 ProjectOverview（适配自旧 OverviewPanel，旧文件已删除）；Rust 新增 link_profile_to_project（校验 profile 存在，None 解除关联）。GUI 手动关联→matched/drift 待 dev run 确认。"
     },
     {
       "id": "ctx-105",

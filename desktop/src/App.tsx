@@ -17,12 +17,17 @@ function App() {
           projectStatuses={state.projectStatuses}
           openProject={state.openProject}
           openProjectStatus={state.openProjectStatus}
+          profiles={state.profiles}
+          linkedProfile={state.linkedProfile}
+          identityState={state.identityState}
+          projectHistory={state.projectHistory}
           busy={state.busy}
           message={state.message}
           onAddProject={() => void actions.addProject()}
           onOpenProject={(project) => void actions.openProject(project)}
           onRemoveProject={(project) => void actions.removeProject(project)}
           onCloseProject={actions.closeProject}
+          onLinkProfile={(profileId) => void actions.linkProfile(profileId)}
         />
       )}
 

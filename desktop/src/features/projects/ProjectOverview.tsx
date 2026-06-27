@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   GitBranch,
   History,
   KeyRound,
@@ -7,30 +6,47 @@ import {
   Server,
   ShieldCheck,
   User,
+  Users,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { StatusBadge } from "../../components/StatusBadge";
 import type {
   ApplyHistoryItem,
   GitIdentityProfile,
   RepositoryStatus,
 } from "../../domain/gitscope";
-import { formatDate, shortPath } from "../../lib/format";
+import { formatDate } from "../../lib/format";
 
-type OverviewPanelProps = {
+export type IdentityState = "matched" | "drift" | "unlinked";
+
+type ProjectOverviewProps = {
   status: RepositoryStatus | null;
-  selectedProfile: GitIdentityProfile | null;
-  identityMatch: boolean;
+  profiles: GitIdentityProfile[];
+  linkedProfile: GitIdentityProfile | null;
+  identityState: IdentityState;
   history: ApplyHistoryItem[];
-  onOpenReview: () => void;
+  busy: boolean;
+  onLinkProfile: (profileId: string | null) => void;
 };
 
-export function OverviewPanel({
+export function ProjectOverview({
   status,
-  selectedProfile,
-  identityMatch,
+  profiles,
+  linkedProfile,
+  identityState,
   history,
-  onOpenReview,
-}: OverviewPanelProps) {
+  busy,
+  onLinkProfile,
+}: ProjectOverviewProps) {
+  const identityLabel = !status
+    ? "No repo"
+    : identityState === "matched"
+      ? "Matched"
+      : identityState === "drift"
+        ? "Drift"
+        : "Unlinked";
+  const identityBadge = identityState === "matched" && status ? "passed" : "warning";
+
   return (
     <div className="overview-stack">
       <section className="status-strip">
@@ -44,15 +60,11 @@ export function OverviewPanel({
           label="Remote"
           value={status?.repository.remote?.host ?? "No remote"}
         />
+        <MetricTile icon={ShieldCheck} label="Identity" value={identityLabel} />
         <MetricTile
           icon={History}
           label="Applies"
           value={String(history.length)}
-        />
-        <MetricTile
-          icon={ShieldCheck}
-          label="Identity"
-          value={identityMatch ? "Matched" : "Review"}
         />
       </section>
 
@@ -63,10 +75,7 @@ export function OverviewPanel({
               <span className="eyebrow">Local Git Config</span>
               <h3>Repository identity</h3>
             </div>
-            <StatusBadge
-              status={identityMatch ? "passed" : "warning"}
-              label={identityMatch ? "Matched" : "Needs Review"}
-            />
+            <StatusBadge status={identityBadge} label={identityLabel} />
           </div>
 
           <dl className="identity-grid">
@@ -83,40 +92,58 @@ export function OverviewPanel({
               {status?.repository.remote?.url ?? "No remote"}
             </DetailItem>
           </dl>
-
-          <button
-            className="primary-action icon-button"
-            disabled={!selectedProfile || !status}
-            onClick={onOpenReview}
-            type="button"
-          >
-            <ArrowRight aria-hidden="true" size={17} />
-            <span>Review plan</span>
-          </button>
         </section>
 
         <section className="panel">
           <div className="panel-heading compact">
             <div>
-              <span className="eyebrow">Selected Profile</span>
-              <h3>{selectedProfile?.label ?? "None"}</h3>
+              <span className="eyebrow">Linked Profile</span>
+              <h3>{linkedProfile?.label ?? "None"}</h3>
             </div>
+            {linkedProfile && status && (
+              <StatusBadge status={identityBadge} label={identityLabel} />
+            )}
           </div>
 
-          {selectedProfile ? (
+          <label>
+            Apply identity from
+            <div className="select-shell">
+              <Users aria-hidden="true" size={16} />
+              <select
+                disabled={busy || profiles.length === 0}
+                onChange={(event) =>
+                  onLinkProfile(event.currentTarget.value || null)
+                }
+                value={linkedProfile?.id ?? ""}
+              >
+                <option value="">No profile</option>
+                {profiles.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </label>
+
+          {linkedProfile ? (
             <dl className="compact-list">
               <DetailItem icon={User} label="Name">
-                {selectedProfile.userName}
+                {linkedProfile.userName}
               </DetailItem>
               <DetailItem icon={Mail} label="Email">
-                {selectedProfile.userEmail}
+                {linkedProfile.userEmail}
               </DetailItem>
               <DetailItem icon={Server} label="Host">
-                {selectedProfile.remoteHost}
+                {linkedProfile.remoteHost}
               </DetailItem>
             </dl>
           ) : (
-            <p className="empty-copy">No profile selected.</p>
+            <p className="empty-copy">
+              {profiles.length === 0
+                ? "Create a profile under Profiles, then link it here."
+                : "Link a profile to compare and apply its git identity."}
+            </p>
           )}
         </section>
 
@@ -124,18 +151,17 @@ export function OverviewPanel({
           <div className="panel-heading compact">
             <div>
               <span className="eyebrow">Apply History</span>
-              <h3>Recent changes</h3>
+              <h3>This project</h3>
             </div>
           </div>
 
           {history.length === 0 ? (
-            <p className="empty-copy">No profile has been applied.</p>
+            <p className="empty-copy">No identity applied yet.</p>
           ) : (
             <div className="history-list">
               {history.slice(0, 5).map((item) => (
                 <article key={item.id} className="history-item">
                   <strong>{item.profileLabel}</strong>
-                  <span>{shortPath(item.repoPath)}</span>
                   <time>{formatDate(item.appliedAt)}</time>
                 </article>
               ))}
@@ -172,7 +198,7 @@ function DetailItem({
   icon: Icon,
   label,
 }: {
-  children: string;
+  children: ReactNode;
   icon: typeof User;
   label: string;
 }) {

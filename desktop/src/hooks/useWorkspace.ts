@@ -1,5 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
+  ApplyHistoryItem,
+  ApplyPlan,
   emptyProfile,
   GitIdentityProfile,
   ProfileInput,
@@ -26,6 +28,8 @@ export function useWorkspace() {
     Record<string, RepositoryStatus | null>
   >({});
   const [openProjectId, setOpenProjectId] = useState<string | null>(null);
+  const [history, setHistory] = useState<ApplyHistoryItem[]>([]);
+  const [applyPlan, setApplyPlan] = useState<ApplyPlan | null>(null);
 
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -39,23 +43,79 @@ export function useWorkspace() {
     ? projectStatuses[openProjectId] ?? null
     : null;
 
+  const linkedProfile = useMemo(
+    () =>
+      openProject?.linkedProfileId
+        ? profiles.find((profile) => profile.id === openProject.linkedProfileId) ??
+          null
+        : null,
+    [openProject, profiles],
+  );
+
+  // Drift is derived from the apply plan: a linked profile whose desired config
+  // already matches the repo produces zero changes.
+  const identityState: "matched" | "drift" | "unlinked" = !linkedProfile
+    ? "unlinked"
+    : applyPlan && applyPlan.changes.length === 0
+      ? "matched"
+      : "drift";
+
+  const projectHistory = useMemo(
+    () =>
+      openProject
+        ? history.filter((item) => item.repoPath === openProject.path)
+        : [],
+    [history, openProject],
+  );
+
   useEffect(() => {
     void loadInitialData();
   }, []);
+
+  useEffect(() => {
+    if (!openProject || !linkedProfile || !openProjectStatus) {
+      setApplyPlan(null);
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const plan = await gitscopeApi.createApplyPlan(
+          openProject.path,
+          linkedProfile,
+        );
+        if (!cancelled) {
+          setApplyPlan(plan);
+        }
+      } catch {
+        if (!cancelled) {
+          setApplyPlan(null);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [openProject, linkedProfile, openProjectStatus]);
 
   async function loadInitialData() {
     setBusy(true);
     setMessage("");
 
     try {
-      const [storedProfiles, storedProjects, current] = await Promise.all([
-        gitscopeApi.listProfiles(),
-        gitscopeApi.listProjects(),
-        gitscopeApi.getCurrentProject(),
-      ]);
+      const [storedProfiles, storedProjects, current, applyHistory] =
+        await Promise.all([
+          gitscopeApi.listProfiles(),
+          gitscopeApi.listProjects(),
+          gitscopeApi.getCurrentProject(),
+          gitscopeApi.listApplyHistory(),
+        ]);
 
       setProfiles(storedProfiles);
       setProjects(storedProjects);
+      setHistory(applyHistory);
       void scanProjects(storedProjects);
 
       // Restore the last-opened project straight into its workbench.
@@ -165,6 +225,31 @@ export function useWorkspace() {
     setMessage("");
   }
 
+  async function linkProfile(profileId: string | null) {
+    if (!openProject) {
+      return;
+    }
+
+    setBusy(true);
+    setMessage("");
+
+    try {
+      const updated = await gitscopeApi.linkProfileToProject(
+        openProject.id,
+        profileId,
+      );
+      setProjects((previous) =>
+        previous.map((project) =>
+          project.id === updated.id ? updated : project,
+        ),
+      );
+    } catch (error) {
+      setMessage(commandErrorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -238,6 +323,7 @@ export function useWorkspace() {
       removeProject,
       openProject: openProjectById,
       closeProject,
+      linkProfile,
       saveProfile,
       editProfile,
       deleteProfile,
@@ -252,6 +338,10 @@ export function useWorkspace() {
       projectStatuses,
       openProject,
       openProjectStatus,
+      linkedProfile,
+      identityState,
+      applyPlan,
+      projectHistory,
       busy,
       message,
     },
