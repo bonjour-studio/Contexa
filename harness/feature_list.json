@@ -19,15 +19,19 @@
       "area": "project-selection",
       "title": "选择并记住当前项目",
       "user_visible_behavior": "用户可以选择一个本地项目目录，并在主界面看到当前项目路径和基础状态。",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "运行 `cd desktop && bun run tauri dev` 打开应用。",
         "选择一个本地项目目录。",
         "确认主界面显示所选项目路径。",
         "关闭并重启应用，确认仍能恢复上次选择或清晰提示重新选择。"
       ],
-      "evidence": [],
-      "notes": "Phase 1 roadmap entry: project selection."
+      "evidence": [
+        "2026-06-27 仓库路径控件已改为只读显示 + Tauri 目录选择器，用户不能手输目录路径。",
+        "2026-06-27 SSH key 路径控件已改为只读显示 + Tauri 文件选择器，避免路径手输。",
+        "2026-06-27 `cd desktop && bun run build`、`cd desktop/src-tauri && cargo check`、`cd desktop && bun run tauri build` 通过。"
+      ],
+      "notes": "Phase 1 roadmap entry: project selection. 当前仅完成目录选择器入口；关闭并重启后的当前项目恢复还未实现，不能标记 passing。"
     },
     {
       "id": "ctx-002",

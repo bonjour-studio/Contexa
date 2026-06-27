@@ -1,118 +1,27 @@
 import { invoke } from "@tauri-apps/api/core";
+import type {
+  ApplyHistoryItem,
+  ApplyPlan,
+  ApplyResult,
+  CommandError,
+  ConnectionTestResult,
+  GitIdentityProfile,
+  PreflightResult,
+  ProfileInput,
+  RepositoryStatus,
+  SshKeyStatus,
+} from "../domain/gitscope";
 
-export type GitRemote = {
-  name: string;
-  url: string;
-  host?: string | null;
-};
-
-export type GitRepository = {
-  rootPath: string;
-  gitDirPath: string;
-  configPath: string;
-  currentBranch?: string | null;
-  remote?: GitRemote | null;
-};
-
-export type GitConfigSnapshot = {
-  repository: GitRepository;
-  userName?: string | null;
-  userEmail?: string | null;
-  coreSshCommand?: string | null;
-  inferredSshKeyPath?: string | null;
-};
-
-export type RepositoryStatus = {
-  repository: GitRepository;
-  config: GitConfigSnapshot;
-};
-
-export type GitIdentityProfile = {
-  id: string;
-  label: string;
-  userName: string;
-  userEmail: string;
-  sshKeyPath: string;
-  remoteHost: string;
-  createdAt: number;
-  updatedAt: number;
-};
-
-export type ProfileInput = {
-  id?: string;
-  label: string;
-  userName: string;
-  userEmail: string;
-  sshKeyPath: string;
-  remoteHost: string;
-};
-
-export type SshKeyStatus = {
-  path: string;
-  expandedPath: string;
-  exists: boolean;
-  isFile: boolean;
-  readable: boolean;
-  message?: string | null;
-};
-
-export type ConfigChange = {
-  key: string;
-  currentValue?: string | null;
-  nextValue: string;
-};
-
-export type ApplyPlan = {
-  repository: GitRepository;
-  profile: GitIdentityProfile;
-  sshCommand: string;
-  changes: ConfigChange[];
-  diff: string;
-};
-
-export type CheckStatus = "passed" | "warning" | "failed";
-
-export type PreflightCheck = {
-  id: string;
-  label: string;
-  status: CheckStatus;
-  message: string;
-};
-
-export type PreflightResult = {
-  canApply: boolean;
-  checks: PreflightCheck[];
-};
-
-export type ApplyHistoryItem = {
-  id: string;
-  repoPath: string;
-  profileId: string;
-  profileLabel: string;
-  appliedAt: number;
-  changes: ConfigChange[];
-  success: boolean;
-  message: string;
-};
-
-export type ApplyResult = {
-  applied: boolean;
-  repository: GitRepository;
-  config: GitConfigSnapshot;
-  historyItem: ApplyHistoryItem;
-};
-
-export type ConnectionTestResult = {
-  commandLabel: string;
-  success: boolean;
-  stdout: string;
-  stderr: string;
-  exitCode?: number | null;
-};
-
-export type CommandError = {
-  code?: string;
-  message?: string;
+export type {
+  ApplyHistoryItem,
+  ApplyPlan,
+  ApplyResult,
+  ConnectionTestResult,
+  GitIdentityProfile,
+  PreflightResult,
+  ProfileInput,
+  RepositoryStatus,
+  SshKeyStatus,
 };
 
 export const gitscopeApi = {
@@ -163,7 +72,7 @@ export function commandErrorMessage(error: unknown) {
     const commandError = error as CommandError;
     const message = commandError.message ?? commandError.code ?? JSON.stringify(error);
     if (message.includes("invoke")) {
-      return "GitScope commands are available in the Tauri desktop shell. Use bun run tauri dev to scan and apply repository config.";
+      return "Contexa commands are available in the Tauri desktop shell. Use bun run tauri dev to scan and apply repository config.";
     }
 
     return message;

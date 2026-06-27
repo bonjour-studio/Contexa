@@ -5,7 +5,7 @@
 - 仓库根目录：运行 `pwd` 确认当前仓库根目录；不要把本机 worktree 绝对路径写入仓库文档。
 - 标准启动路径：`cd desktop && bun run tauri dev`；也可以用 `RUN_START_COMMAND=1 ./harness/init.sh`
 - 标准验证路径：`./harness/init.sh`
-- 当前最高优先级未完成功能：`ctx-001` 选择并记住当前项目
+- 当前最高优先级未完成功能：`ctx-001` 选择并记住当前项目（进行中：目录选择器已接入，项目持久化未完成）
 - 当前 blocker：无
 
 ## 会话记录
@@ -21,3 +21,27 @@
 - 更新过的文件或工件：根指令文件；`harness/README.md`；`harness/progress.md`；`harness/feature_list.json`；`harness/init.sh`；`harness/session-handoff.md`；`harness/clean-state-checklist.md`；`harness/evaluator-rubric.md`；`harness/quality-document.md`。
 - 已知风险或未解决问题：产品功能仍处于 Tauri scaffold 阶段，尚无自动化测试脚本；当前标准验证使用前端 build 和 Rust `cargo check` 作为 baseline，不等同于完整端到端验证。
 - 下一步最佳动作：开始 `ctx-001`，实现项目选择与当前项目状态展示。
+
+### Session 002
+
+- 日期：2026-06-27
+- 本轮目标：按 Harness Engineering 流程完成两项维护任务：移除 UI 代码中的真实个人姓名占位、优化桌面 UI 风格并整理前端文件结构。
+- 已完成：将 profile 表单里的真实姓名占位替换为泛化占位；将原单文件前端拆为 domain 类型、Tauri client、workspace hook、通用组件、feature panels、格式化工具和样式目录；加入 `lucide-react` 用于图标化导航与操作；将页面调整为 Contexa 工作台布局。
+- 运行过的验证：`pwd`；`./harness/init.sh`（变更前 baseline）；目标姓名关键字 `rg` 搜索；`cd desktop && bun run build`；本地 Vite 浏览器布局检查；`./harness/init.sh`（变更后完整验证）。
+- 已记录证据：目标姓名关键字 `rg` 搜索无输出；2026-06-27 `./harness/init.sh` 通过：`bun install` 成功、`cd desktop && bun run build` 成功、`cd desktop/src-tauri && cargo check` 成功；浏览器检查 1280x720 与 390x820 无水平溢出、页面文本无目标姓名关键字、console warn/error 为空。
+- 提交记录：未提交（用户未要求提交）。
+- 更新过的文件或工件：`desktop/package.json`；`desktop/bun.lock`；`desktop/src/App.tsx`；`desktop/src/main.tsx`；`desktop/src/services/gitscope.ts`；新增 `desktop/src/components/`、`desktop/src/domain/`、`desktop/src/features/`、`desktop/src/hooks/`、`desktop/src/lib/`、`desktop/src/styles/`；删除旧 `desktop/src/App.css`；更新 `harness/progress.md`、`harness/feature_list.json`、`harness/session-handoff.md`。
+- 已知风险或未解决问题：浏览器视觉检查使用 Vite 页面验证布局和样式，未启动完整 Tauri shell 做人工端到端交互。
+- 下一步最佳动作：继续 `ctx-001`，实现项目选择与当前项目状态展示；开始前仍先跑 `./harness/init.sh`。
+
+### Session 003
+
+- 日期：2026-06-27
+- 本轮目标：检查所有涉及目录的 UI，改为系统选择器，不让用户手输目录路径。
+- 已完成：顶部仓库路径控件改为只读显示 + Tauri 目录选择器，选择后立即扫描仓库；SSH key 路径控件也改为只读显示 + Tauri 文件选择器，选择后立即检查文件状态；新增 dialog service；注册 `tauri-plugin-dialog` 并将主窗口 capability 限定为 `dialog:allow-open`；只读路径输入增加视觉样式。
+- 运行过的验证：`./harness/init.sh`（变更前 baseline）；路径控件 `rg` 审查；`cd desktop && bun run build`；`cd desktop/src-tauri && cargo check`；`cd desktop && bun run tauri build`。
+- 已记录证据：`Repository path` 和 `SSH private key path reference` 的输入框均为 `readOnly`，对应按钮分别调用目录/文件选择器；`tauri build` 通过并生成 macOS `.app` 与 `.dmg`。
+- 提交记录：未提交（用户未要求提交）。
+- 更新过的文件或工件：`desktop/package.json`；`desktop/bun.lock`；`desktop/src/App.tsx`；`desktop/src/components/AppShell.tsx`；`desktop/src/features/workspace/ProfilesPanel.tsx`；`desktop/src/hooks/useGitScopeWorkspace.ts`；`desktop/src/services/dialog.ts`；`desktop/src/styles/base.css`；`desktop/src-tauri/Cargo.toml`；`desktop/src-tauri/Cargo.lock`；`desktop/src-tauri/src/lib.rs`；`desktop/src-tauri/capabilities/default.json`；`harness/progress.md`；`harness/feature_list.json`；`harness/session-handoff.md`。
+- 已知风险或未解决问题：`ctx-001` 仍不能标记 passing，因为关闭并重启后恢复当前项目尚未实现；本轮没有进行完整人工 Tauri UI 点击路径验证，但打包链路已覆盖 dialog 插件与权限配置。
+- 下一步最佳动作：继续 `ctx-001` 的项目选择持久化：选择目录后保存为当前项目，重启后恢复或清晰提示重新选择。
