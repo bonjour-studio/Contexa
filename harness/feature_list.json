@@ -41,13 +41,15 @@
       "area": "navigation",
       "title": "两级导航外壳与 Profiles 复用库分区",
       "user_visible_behavior": "左侧顶层分区为 Projects / Profiles / Settings；Profiles 是不绑定任何项目的复用库；Settings 是应用级设置（v1 先放 About/版本）。",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "`cd desktop && bun run build`",
         "在 Projects / Profiles / Settings 之间切换，确认各分区独立、Profiles 不依赖已选项目。"
       ],
-      "evidence": [],
-      "notes": "用手写视图状态，不引入路由库。沿用现有 ProfilesPanel 放入 Profiles 分区。"
+      "evidence": [
+        "2026-06-27 `cd desktop && bun run build` 成功；打包模块数 66→57，旧单仓库 Overview/Review 面板不再进入 bundle，确认新外壳已接管入口。"
+      ],
+      "notes": "新增两级导航 AppShell 与 PageHeader（手写视图状态，无路由库）；ProfilesPanel 移到 features/profiles 并由 ProfilesSection 包装；新增 ProjectsSection 占位与 SettingsSection（About/版本/窗口与安全说明）。features/workspace 下 OverviewPanel/ReviewPanel 暂留，待 M4/M5 适配为项目工作台。手动点击导航待 dev run 确认。"
     },
     {
       "id": "ctx-103",

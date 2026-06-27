@@ -1,37 +1,20 @@
-import { AppShell } from "./components/AppShell";
-import { OverviewPanel } from "./features/workspace/OverviewPanel";
-import { ProfilesPanel } from "./features/workspace/ProfilesPanel";
-import { ReviewPanel } from "./features/workspace/ReviewPanel";
+import { useState } from "react";
+import { AppShell, type AppSection } from "./components/AppShell";
+import { ProfilesSection } from "./features/profiles/ProfilesSection";
+import { ProjectsSection } from "./features/projects/ProjectsSection";
+import { SettingsSection } from "./features/settings/SettingsSection";
 import { useGitScopeWorkspace } from "./hooks/useGitScopeWorkspace";
 
 function App() {
+  const [section, setSection] = useState<AppSection>("projects");
   const { actions, state } = useGitScopeWorkspace();
 
   return (
-    <AppShell
-      busy={state.busy}
-      message={state.message}
-      profiles={state.profiles}
-      repoPath={state.repoPath}
-      selectedProfileId={state.selectedProfileId}
-      status={state.status}
-      tab={state.tab}
-      onChooseRepositoryDirectory={() => void actions.chooseRepositoryDirectory()}
-      onSelectedProfileChange={actions.setSelectedProfileId}
-      onTabChange={actions.setTab}
-    >
-      {state.tab === "overview" && (
-        <OverviewPanel
-          status={state.status}
-          selectedProfile={state.selectedProfile}
-          identityMatch={state.identityMatch}
-          history={state.history}
-          onOpenReview={() => actions.setTab("review")}
-        />
-      )}
+    <AppShell section={section} onSectionChange={setSection}>
+      {section === "projects" && <ProjectsSection />}
 
-      {state.tab === "profiles" && (
-        <ProfilesPanel
+      {section === "profiles" && (
+        <ProfilesSection
           profiles={state.profiles}
           profileForm={state.profileForm}
           keyStatus={state.keyStatus}
@@ -44,20 +27,7 @@ function App() {
         />
       )}
 
-      {state.tab === "review" && (
-        <ReviewPanel
-          status={state.status}
-          selectedProfile={state.selectedProfile}
-          applyPlan={state.applyPlan}
-          preflight={state.preflight}
-          connectionResult={state.connectionResult}
-          busy={state.busy}
-          onApply={() => void actions.applySelectedProfile()}
-          onTestSsh={() => void actions.runConnectionTest("ssh")}
-          onTestRemote={() => void actions.runConnectionTest("remote")}
-          onOpenProfiles={() => actions.setTab("profiles")}
-        />
-      )}
+      {section === "settings" && <SettingsSection />}
     </AppShell>
   );
 }

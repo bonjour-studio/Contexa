@@ -1,57 +1,31 @@
-import {
-  Activity,
-  ClipboardCheck,
-  FolderOpen,
-  GitBranch,
-  RefreshCw,
-  Settings,
-  Users,
-} from "lucide-react";
+import { FolderGit2, Settings, Users } from "lucide-react";
 import type { ReactNode } from "react";
-import type {
-  GitIdentityProfile,
-  RepositoryStatus,
-  WorkspaceTab,
-} from "../domain/gitscope";
-import { shortPath } from "../lib/format";
+
+export type AppSection = "projects" | "profiles" | "settings";
 
 const navItems = [
-  { id: "overview", label: "Status", icon: Activity },
+  { id: "projects", label: "Projects", icon: FolderGit2 },
   { id: "profiles", label: "Profiles", icon: Users },
-  { id: "review", label: "Review", icon: ClipboardCheck },
+  { id: "settings", label: "Settings", icon: Settings },
 ] satisfies Array<{
-  id: WorkspaceTab;
+  id: AppSection;
   label: string;
-  icon: typeof Activity;
+  icon: typeof FolderGit2;
 }>;
 
 type AppShellProps = {
-  busy: boolean;
+  section: AppSection;
   children: ReactNode;
-  message: string;
-  profiles: GitIdentityProfile[];
-  repoPath: string;
-  selectedProfileId: string;
-  status: RepositoryStatus | null;
-  tab: WorkspaceTab;
-  onChooseRepositoryDirectory: () => void;
-  onSelectedProfileChange: (profileId: string) => void;
-  onTabChange: (tab: WorkspaceTab) => void;
+  onSectionChange: (section: AppSection) => void;
 };
 
-export function AppShell({
-  busy,
-  children,
-  message,
-  profiles,
-  repoPath,
-  selectedProfileId,
-  status,
-  tab,
-  onChooseRepositoryDirectory,
-  onSelectedProfileChange,
-  onTabChange,
-}: AppShellProps) {
+/**
+ * Top-level shell: a fixed sidebar with the three project-independent sections
+ * (Projects / Profiles / Settings) and a scrolling content pane. Per-project
+ * navigation (Overview / Git Identity) lives inside the Projects workbench, not
+ * here — this is the outer level of the two-level navigation.
+ */
+export function AppShell({ section, children, onSectionChange }: AppShellProps) {
   return (
     <main className="app-shell">
       <aside className="sidebar">
@@ -59,19 +33,20 @@ export function AppShell({
           <span className="brand-mark">Cx</span>
           <div>
             <h1>Contexa</h1>
-            <p>Identity workspace</p>
+            <p>Context console</p>
           </div>
         </div>
 
-        <nav className="nav-list" aria-label="Contexa workspace">
+        <nav className="nav-list" aria-label="Contexa sections">
           {navItems.map((item) => {
             const Icon = item.icon;
 
             return (
               <button
-                className={tab === item.id ? "nav-item active" : "nav-item"}
+                aria-current={section === item.id ? "page" : undefined}
+                className={section === item.id ? "nav-item active" : "nav-item"}
                 key={item.id}
-                onClick={() => onTabChange(item.id)}
+                onClick={() => onSectionChange(item.id)}
                 type="button"
               >
                 <Icon aria-hidden="true" size={17} />
@@ -82,74 +57,13 @@ export function AppShell({
         </nav>
 
         <section className="sidebar-panel">
-          <span className="eyebrow">Current Repo</span>
-          <strong>{status ? shortPath(status.repository.rootPath) : "Not detected"}</strong>
-          <p>
-            <GitBranch aria-hidden="true" size={14} />
-            {status?.repository.currentBranch ?? "No branch selected"}
-          </p>
+          <span className="eyebrow">Local-first</span>
+          <strong>No secrets stored</strong>
+          <p>References only · diff before apply</p>
         </section>
       </aside>
 
-      <section className="workspace">
-        <header className="topbar">
-          <div className="topbar-title">
-            <span className="eyebrow">Workbench</span>
-            <h2>Repository identity</h2>
-          </div>
-
-          <div className="repo-path-control">
-            <label htmlFor="repo-path">Repository path</label>
-            <div className="inline-control">
-              <input
-                id="repo-path"
-                readOnly
-                value={repoPath}
-                placeholder="Choose a repository folder"
-              />
-              <button
-                className="icon-button"
-                disabled={busy}
-                onClick={onChooseRepositoryDirectory}
-                title="Choose repository folder"
-                type="button"
-              >
-                {busy ? (
-                  <RefreshCw aria-hidden="true" className="spin-icon" size={17} />
-                ) : (
-                  <FolderOpen aria-hidden="true" size={17} />
-                )}
-                <span>Choose</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="profile-picker">
-            <label htmlFor="profile-select">Profile</label>
-            <div className="select-shell">
-              <Settings aria-hidden="true" size={16} />
-              <select
-                id="profile-select"
-                value={selectedProfileId}
-                onChange={(event) =>
-                  onSelectedProfileChange(event.currentTarget.value)
-                }
-              >
-                <option value="">Select profile</option>
-                {profiles.map((profile) => (
-                  <option key={profile.id} value={profile.id}>
-                    {profile.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </header>
-
-        {message && <div className="message-bar">{message}</div>}
-
-        {children}
-      </section>
+      <section className="workspace">{children}</section>
     </main>
   );
 }

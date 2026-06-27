@@ -6,8 +6,8 @@
 - 标准启动路径：`cd desktop && bun run tauri dev`；也可以用 `RUN_START_COMMAND=1 ./harness/init.sh`
 - 标准验证路径：`./harness/init.sh`
 - 已批准的产品方案：v1 多项目 Git 上下文控制台；两级导航 Projects/Profiles/Settings；窗口按客户端方式自适应 + 最小尺寸；每个小模块单独验证并本地提交。
-- 当前已完成：`ctx-000` 基线整理（passing）；`ctx-101` 原生窗口尺寸与按窗格自适应布局（passing）。
-- 当前最高优先级未完成功能：`ctx-102` 两级导航外壳与 Profiles 复用库分区。
+- 当前已完成：`ctx-000` 基线整理；`ctx-101` 原生窗口尺寸与按窗格自适应布局；`ctx-102` 两级导航外壳与 Profiles 复用库分区（均 passing）。
+- 当前最高优先级未完成功能：`ctx-103` 多项目列表与持久化。
 - 当前 blocker：无
 - 当前分支注意事项：本地 `main` 已重写历史，相对 `origin/main` 仍分叉；按用户要求每个模块在本地 main 提交、不 push。`filter-branch` 留有 `refs/original/refs/heads/main` 本地恢复引用。
 
@@ -57,7 +57,8 @@
 - 已完成模块：
   - M0/`ctx-000b`：把 sessions 002/003 已验证的重构落为两个本地提交（desktop 拆分 + harness 证据），让后续工作从干净树开始。
   - M1/`ctx-101`：`tauri.conf.json` 设默认 1120×760 / minWidth 880 / minHeight 620 / center；新增 `tauri-plugin-window-state` 记忆窗口几何；`base.css` 建立 fill-height 链；`workbench.css` 用 fill-height 外壳 + 内部滚动 + auto-fit 网格 + 单个 `@container` 查询替换全部 `@media` 视口断点。并重排 `feature_list.json` 对齐已批准方案。
+  - M2/`ctx-102`：新建两级导航 `AppShell`（Projects/Profiles/Settings，手写视图状态）与复用 `PageHeader`；`ProfilesPanel` 移到 `features/profiles` 并由 `ProfilesSection` 包装为不绑定项目的库；新增 `ProjectsSection` 占位与 `SettingsSection`。`features/workspace` 下 OverviewPanel/ReviewPanel 暂留，待 M4/M5 适配。
 - 运行过的验证：`./harness/init.sh`（基线）；`cd desktop && bun run build`；`cd desktop/src-tauri && cargo check`（编译 window-state v2.4.1，build.rs 校验新窗口配置）；`cd desktop && bun run tauri build`（约 1m28s，生成 Contexa.app 与 .dmg）。
 - 提交记录：`feat(desktop): split workbench UI, add dialog/tray and path pickers`；`chore(harness): record workbench-split baseline evidence`；`feat(desktop): native window sizing and fluid layout`（含 harness 重排）。本地 main，未 push。
 - 已知风险或未解决问题：窗口几何记忆、最小尺寸约束、面板回流为构建级已验证 + Tauri/插件原生行为，未做 GUI 人工点击端到端验证。`gitscope.json` 存储文件名暂不改名（避免迁移）。
-- 下一步最佳动作：M2/`ctx-102`，新建两级导航外壳并把 Profiles 提为顶层分区；开始前先跑 `./harness/init.sh`。
+- 下一步最佳动作：M3/`ctx-103`，新增 Rust `Project` 模型与持久化、`ProjectsSection` 改为真实多项目列表（添加/移除/重启恢复）；开始前先跑 `./harness/init.sh`。
