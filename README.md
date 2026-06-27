@@ -69,7 +69,15 @@ Contexa is layered from the user-facing console down to the project scanner:
 
 ## Development
 
-Tech stack: Tauri v2 + Rust + React + TypeScript + Vite. Package manager: Bun.
+The desktop app lives in [`desktop/`](desktop/) — Tauri v2 + Rust + React + TypeScript + Vite, built with Bun.
+
+```bash
+cd desktop
+bun install
+bun run tauri dev
+```
+
+See [`desktop/README.md`](desktop/README.md) for prerequisites, the full command set, and project structure.
 
 ## License
 
