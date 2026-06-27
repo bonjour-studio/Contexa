@@ -8,6 +8,7 @@ import type {
   GitIdentityProfile,
   PreflightResult,
   ProfileInput,
+  Project,
   RepositoryStatus,
   SshKeyStatus,
 } from "../domain/gitscope";
@@ -20,6 +21,7 @@ export type {
   GitIdentityProfile,
   PreflightResult,
   ProfileInput,
+  Project,
   RepositoryStatus,
   SshKeyStatus,
 };
@@ -36,6 +38,21 @@ export const gitscopeApi = {
   },
   deleteProfile(profileId: string) {
     return invoke<GitIdentityProfile[]>("delete_profile", { profileId });
+  },
+  listProjects() {
+    return invoke<Project[]>("list_projects");
+  },
+  addProject(path: string) {
+    return invoke<Project>("add_project", { path });
+  },
+  removeProject(projectId: string) {
+    return invoke<Project[]>("remove_project", { projectId });
+  },
+  setCurrentProject(projectId: string | null) {
+    return invoke<Project | null>("set_current_project", { projectId });
+  },
+  getCurrentProject() {
+    return invoke<Project | null>("get_current_project");
   },
   listApplyHistory() {
     return invoke<ApplyHistoryItem[]>("list_apply_history");

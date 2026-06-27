@@ -1,24 +1,56 @@
-import { FolderGit2 } from "lucide-react";
-import { PageHeader } from "../../components/PageHeader";
+import type { Project, RepositoryStatus } from "../../domain/gitscope";
+import { ProjectsList } from "./ProjectsList";
+import { ProjectWorkbench } from "./ProjectWorkbench";
+
+type ProjectsSectionProps = {
+  projects: Project[];
+  projectStatuses: Record<string, RepositoryStatus | null>;
+  openProject: Project | null;
+  openProjectStatus: RepositoryStatus | null;
+  busy: boolean;
+  message: string;
+  onAddProject: () => void;
+  onOpenProject: (project: Project) => void;
+  onRemoveProject: (project: Project) => void;
+  onCloseProject: () => void;
+};
 
 /**
- * Projects home. Placeholder for now — the multi-project list, persistence, and
- * per-project workbench land in the following modules (ctx-103 / ctx-104 /
- * ctx-105). This keeps the two-level navigation shell coherent in the meantime.
+ * Routes the Projects section between the multi-project list and the open
+ * project's workbench. The open project (if any) is the source of truth.
  */
-export function ProjectsSection() {
+export function ProjectsSection({
+  projects,
+  projectStatuses,
+  openProject,
+  openProjectStatus,
+  busy,
+  message,
+  onAddProject,
+  onOpenProject,
+  onRemoveProject,
+  onCloseProject,
+}: ProjectsSectionProps) {
+  if (openProject) {
+    return (
+      <ProjectWorkbench
+        project={openProject}
+        status={openProjectStatus}
+        message={message}
+        onBack={onCloseProject}
+      />
+    );
+  }
+
   return (
-    <>
-      <PageHeader eyebrow="Workspace" title="Projects" />
-      <section className="panel empty-state-panel">
-        <FolderGit2 aria-hidden="true" size={26} />
-        <h3>Multi-project management is being set up</h3>
-        <p className="empty-copy">
-          Soon you can add local projects here, see each project's git identity
-          status at a glance, and manage it in its own workbench. Reusable
-          identities live under Profiles.
-        </p>
-      </section>
-    </>
+    <ProjectsList
+      projects={projects}
+      projectStatuses={projectStatuses}
+      busy={busy}
+      message={message}
+      onAddProject={onAddProject}
+      onOpenProject={onOpenProject}
+      onRemoveProject={onRemoveProject}
+    />
   );
 }

@@ -57,15 +57,19 @@
       "area": "project-management",
       "title": "多项目列表与持久化",
       "user_visible_behavior": "用户可以添加多个本地项目，在项目列表里看到每个项目的名称、路径、分支、远端和身份匹配状态，可打开或移除；重启后列表与上次打开项保留。",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "`cd desktop && bun run build`",
-        "`cd desktop/src-tauri && cargo check`",
+        "`cd desktop/src-tauri && cargo test`",
         "`cd desktop && bun run tauri build`",
         "添加 2 个仓库，重启应用，确认列表持久化、状态徽标渲染。"
       ],
-      "evidence": [],
-      "notes": "取代 ctx-001（单项目）。Rust 新增 Project 模型与 list/add/remove/set_current/get_current 命令，扩展 AppStorage。身份匹配由 create_apply_plan().changes.len()==0 推导，按需计算。"
+      "evidence": [
+        "2026-06-27 `cd desktop && bun run build` 成功（64 模块）。",
+        "2026-06-27 `cd desktop/src-tauri && cargo test` 5 项全过，含新增 `loads_storage_without_project_fields`，证明缺少 projects/currentProjectId 的旧 gitscope.json 仍能按 serde 默认值反序列化。",
+        "2026-06-27 `cd desktop && bun run tauri build` 通过（约 1m28s），生成 Contexa.app 与 .dmg。"
+      ],
+      "notes": "取代 ctx-001（单项目）。Rust 新增 Project 模型与 list/add/remove/set_current/get_current 命令，AppStorage 加 `#[serde(default)]` 保证旧文件可读。前端 `useGitScopeWorkspace` 重写为 `useWorkspace` store（projects + profiles + 打开项目按需扫描）；ProjectsSection 改为 list↔workbench 路由；新增 ProjectsList 卡片列表与 ProjectWorkbench 外壳。重启自动恢复上次打开项目。GUI 点击循环（加 2 仓库→重启→列表保留）待 dev run 确认；持久化复用与 Profiles 相同且已验证的 read_storage/write_storage。身份 matched/drift 留待 ctx-104 关联 Profile 后呈现。"
     },
     {
       "id": "ctx-104",

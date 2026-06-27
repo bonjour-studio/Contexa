@@ -89,11 +89,30 @@ struct ProfileInput {
     remote_host: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct Project {
+    id: String,
+    name: String,
+    path: String,
+    added_at: u64,
+    last_opened_at: u64,
+    linked_profile_id: Option<String>,
+}
+
 #[derive(Default, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct AppStorage {
+    // `#[serde(default)]` keeps older storage files (which predate `projects`
+    // and `current_project_id`) loadable instead of failing to deserialize.
+    #[serde(default)]
     profiles: Vec<GitIdentityProfile>,
+    #[serde(default)]
     apply_history: Vec<ApplyHistoryItem>,
+    #[serde(default)]
+    projects: Vec<Project>,
+    #[serde(default)]
+    current_project_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -252,6 +271,128 @@ fn delete_profile(
     write_storage(&app, &storage)?;
 
     Ok(storage.profiles)
+}
+
+#[tauri::command]
+fn list_projects(app: tauri::AppHandle) -> CommandResult<Vec<Project>> {
+    Ok(read_storage(&app)?.projects)
+}
+
+#[tauri::command]
+fn add_project(app: tauri::AppHandle, path: String) -> CommandResult<Project> {
+    let resolved = resolve_user_path(Some(&path))?;
+    let metadata = fs::metadata(&resolved).map_err(|err| {
+        CommandError::new(
+            "invalid_path",
+            format!("Could not inspect project path: {err}"),
+        )
+    })?;
+    if !metadata.is_dir() {
+        return Err(CommandError::new(
+            "invalid_path",
+            "Selected path is not a directory.",
+        ));
+    }
+
+    let path_value = path_string(&resolved);
+    let now = now_epoch_seconds()?;
+    let mut storage = read_storage(&app)?;
+
+    // Dedupe by canonical path: re-adding an existing project just reopens it.
+    if let Some(index) = storage
+        .projects
+        .iter()
+        .position(|project| project.path == path_value)
+    {
+        storage.projects[index].last_opened_at = now;
+        storage.current_project_id = Some(storage.projects[index].id.clone());
+        let project = storage.projects[index].clone();
+        write_storage(&app, &storage)?;
+        return Ok(project);
+    }
+
+    let name = resolved
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .filter(|name| !name.is_empty())
+        .unwrap_or_else(|| path_value.clone());
+
+    let project = Project {
+        id: unique_id("project")?,
+        name,
+        path: path_value,
+        added_at: now,
+        last_opened_at: now,
+        linked_profile_id: None,
+    };
+
+    storage.projects.push(project.clone());
+    storage.current_project_id = Some(project.id.clone());
+    write_storage(&app, &storage)?;
+
+    Ok(project)
+}
+
+#[tauri::command]
+fn remove_project(app: tauri::AppHandle, project_id: String) -> CommandResult<Vec<Project>> {
+    let id = project_id.trim();
+    let mut storage = read_storage(&app)?;
+    storage.projects.retain(|project| project.id != id);
+    if storage.current_project_id.as_deref() == Some(id) {
+        storage.current_project_id = None;
+    }
+    write_storage(&app, &storage)?;
+
+    Ok(storage.projects)
+}
+
+#[tauri::command]
+fn set_current_project(
+    app: tauri::AppHandle,
+    project_id: Option<String>,
+) -> CommandResult<Option<Project>> {
+    let mut storage = read_storage(&app)?;
+    let trimmed = project_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|id| !id.is_empty());
+
+    match trimmed {
+        Some(id) => {
+            let Some(index) = storage
+                .projects
+                .iter()
+                .position(|project| project.id == id)
+            else {
+                return Err(CommandError::new(
+                    "project_not_found",
+                    "That project is no longer in the list.",
+                ));
+            };
+            storage.projects[index].last_opened_at = now_epoch_seconds()?;
+            storage.current_project_id = Some(id.to_owned());
+            let project = storage.projects[index].clone();
+            write_storage(&app, &storage)?;
+            Ok(Some(project))
+        }
+        None => {
+            storage.current_project_id = None;
+            write_storage(&app, &storage)?;
+            Ok(None)
+        }
+    }
+}
+
+#[tauri::command]
+fn get_current_project(app: tauri::AppHandle) -> CommandResult<Option<Project>> {
+    let storage = read_storage(&app)?;
+    Ok(storage.current_project_id.as_ref().and_then(|id| {
+        storage
+            .projects
+            .iter()
+            .find(|project| &project.id == id)
+            .cloned()
+    }))
 }
 
 #[tauri::command]
@@ -1048,6 +1189,11 @@ pub fn run() {
             list_profiles,
             save_profile,
             delete_profile,
+            list_projects,
+            add_project,
+            remove_project,
+            set_current_project,
+            get_current_project,
             list_apply_history,
             check_ssh_key,
             create_apply_plan,
@@ -1114,6 +1260,18 @@ mod tests {
             shell_quote("/Users/example/client's key"),
             "'/Users/example/client'\\''s key'"
         );
+    }
+
+    #[test]
+    fn loads_storage_without_project_fields() {
+        // Storage files written before multi-project support lack `projects` and
+        // `currentProjectId`; they must still deserialize via serde defaults.
+        let json = r#"{"profiles":[],"applyHistory":[]}"#;
+        let storage: AppStorage =
+            serde_json::from_str(json).expect("legacy storage should still load");
+
+        assert!(storage.projects.is_empty());
+        assert!(storage.current_project_id.is_none());
     }
 
     #[test]

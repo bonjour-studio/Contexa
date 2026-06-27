@@ -1,5 +1,14 @@
 export type WorkspaceTab = "overview" | "profiles" | "review";
 
+export type Project = {
+  id: string;
+  name: string;
+  path: string;
+  addedAt: number;
+  lastOpenedAt: number;
+  linkedProfileId?: string | null;
+};
+
 export type GitRemote = {
   name: string;
   url: string;

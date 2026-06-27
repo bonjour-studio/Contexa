@@ -3,15 +3,28 @@ import { AppShell, type AppSection } from "./components/AppShell";
 import { ProfilesSection } from "./features/profiles/ProfilesSection";
 import { ProjectsSection } from "./features/projects/ProjectsSection";
 import { SettingsSection } from "./features/settings/SettingsSection";
-import { useGitScopeWorkspace } from "./hooks/useGitScopeWorkspace";
+import { useWorkspace } from "./hooks/useWorkspace";
 
 function App() {
   const [section, setSection] = useState<AppSection>("projects");
-  const { actions, state } = useGitScopeWorkspace();
+  const { actions, state } = useWorkspace();
 
   return (
     <AppShell section={section} onSectionChange={setSection}>
-      {section === "projects" && <ProjectsSection />}
+      {section === "projects" && (
+        <ProjectsSection
+          projects={state.projects}
+          projectStatuses={state.projectStatuses}
+          openProject={state.openProject}
+          openProjectStatus={state.openProjectStatus}
+          busy={state.busy}
+          message={state.message}
+          onAddProject={() => void actions.addProject()}
+          onOpenProject={(project) => void actions.openProject(project)}
+          onRemoveProject={(project) => void actions.removeProject(project)}
+          onCloseProject={actions.closeProject}
+        />
+      )}
 
       {section === "profiles" && (
         <ProfilesSection
