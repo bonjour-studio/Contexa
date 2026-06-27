@@ -317,6 +317,37 @@
   padding-top: 12px;
 }
 
+.workbench-tabs {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  width: fit-content;
+}
+
+.workbench-tab {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  font-weight: 750;
+  min-height: 32px;
+  padding: 0 16px;
+}
+
+.workbench-tab:hover:not(:disabled) {
+  border: 0;
+  color: var(--text);
+}
+
+.workbench-tab.active {
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(23, 32, 38, 0.08);
+  color: var(--text);
+}
+
 .panel {
   background: var(--surface);
   border: 1px solid var(--border);

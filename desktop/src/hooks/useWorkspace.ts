@@ -2,8 +2,10 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   ApplyHistoryItem,
   ApplyPlan,
+  ConnectionTestResult,
   emptyProfile,
   GitIdentityProfile,
+  PreflightResult,
   ProfileInput,
   Project,
   RepositoryStatus,
@@ -30,6 +32,9 @@ export function useWorkspace() {
   const [openProjectId, setOpenProjectId] = useState<string | null>(null);
   const [history, setHistory] = useState<ApplyHistoryItem[]>([]);
   const [applyPlan, setApplyPlan] = useState<ApplyPlan | null>(null);
+  const [preflight, setPreflight] = useState<PreflightResult | null>(null);
+  const [connectionResult, setConnectionResult] =
+    useState<ConnectionTestResult | null>(null);
 
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -73,24 +78,30 @@ export function useWorkspace() {
   }, []);
 
   useEffect(() => {
+    // A new project/profile/status context invalidates any prior connection test.
+    setConnectionResult(null);
+
     if (!openProject || !linkedProfile || !openProjectStatus) {
       setApplyPlan(null);
+      setPreflight(null);
       return;
     }
 
     let cancelled = false;
     void (async () => {
       try {
-        const plan = await gitscopeApi.createApplyPlan(
-          openProject.path,
-          linkedProfile,
-        );
+        const [plan, checks] = await Promise.all([
+          gitscopeApi.createApplyPlan(openProject.path, linkedProfile),
+          gitscopeApi.runPreflight(openProject.path, linkedProfile),
+        ]);
         if (!cancelled) {
           setApplyPlan(plan);
+          setPreflight(checks);
         }
       } catch {
         if (!cancelled) {
           setApplyPlan(null);
+          setPreflight(null);
         }
       }
     })();
@@ -250,6 +261,55 @@ export function useWorkspace() {
     }
   }
 
+  async function applyIdentity() {
+    if (!openProject || !linkedProfile) {
+      return;
+    }
+
+    setBusy(true);
+    setMessage("");
+
+    try {
+      const result = await gitscopeApi.applyProfile(
+        openProject.path,
+        linkedProfile,
+      );
+      // Update this project's cached status so drift/diff recompute as matched.
+      setProjectStatuses((previous) => ({
+        ...previous,
+        [openProject.id]: { repository: result.repository, config: result.config },
+      }));
+      setHistory(await gitscopeApi.listApplyHistory());
+      setMessage(result.historyItem.message);
+    } catch (error) {
+      setMessage(commandErrorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function runConnectionTest(kind: "ssh" | "remote") {
+    if (!openProject || !linkedProfile) {
+      return;
+    }
+
+    setBusy(true);
+    setConnectionResult(null);
+    setMessage("");
+
+    try {
+      const result =
+        kind === "ssh"
+          ? await gitscopeApi.testSshConnection(linkedProfile)
+          : await gitscopeApi.testGitLsRemote(openProject.path, linkedProfile);
+      setConnectionResult(result);
+    } catch (error) {
+      setMessage(commandErrorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -324,6 +384,8 @@ export function useWorkspace() {
       openProject: openProjectById,
       closeProject,
       linkProfile,
+      applyIdentity,
+      runConnectionTest,
       saveProfile,
       editProfile,
       deleteProfile,
@@ -341,6 +403,8 @@ export function useWorkspace() {
       linkedProfile,
       identityState,
       applyPlan,
+      preflight,
+      connectionResult,
       projectHistory,
       busy,
       message,

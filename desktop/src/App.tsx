@@ -21,6 +21,9 @@ function App() {
           linkedProfile={state.linkedProfile}
           identityState={state.identityState}
           projectHistory={state.projectHistory}
+          applyPlan={state.applyPlan}
+          preflight={state.preflight}
+          connectionResult={state.connectionResult}
           busy={state.busy}
           message={state.message}
           onAddProject={() => void actions.addProject()}
@@ -28,6 +31,9 @@ function App() {
           onRemoveProject={(project) => void actions.removeProject(project)}
           onCloseProject={actions.closeProject}
           onLinkProfile={(profileId) => void actions.linkProfile(profileId)}
+          onApply={() => void actions.applyIdentity()}
+          onTestSsh={() => void actions.runConnectionTest("ssh")}
+          onTestRemote={() => void actions.runConnectionTest("remote")}
         />
       )}
 

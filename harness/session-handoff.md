@@ -2,33 +2,38 @@
 
 ## 当前已验证
 
-- 现在明确可用的部分：根指令文件、desktop 子项目约定、README 产品范围、Tauri/React desktop app、初始 harness 工件、已拆分的前端工作台结构、Tauri dialog 插件。
-- 这轮实际跑过的验证：`./harness/init.sh` 通过：`bun install` 成功；`cd desktop && bun run build` 成功；`cd desktop/src-tauri && cargo check` 成功。
-- Tauri 插件验证：`cd desktop && bun run tauri build` 通过，生成 macOS `.app` 与 `.dmg`。
-- 额外验证：目标姓名关键字 `rg` 搜索无输出；本地 Vite 页面在 1280x720 与 390x820 下无水平溢出，页面文本无目标姓名关键字，浏览器 console warn/error 为空。
+- 现在明确可用的部分：v1 多项目 Git 上下文控制台的全部 5 个模块（`ctx-101`~`ctx-105`）均 passing。两级导航（Projects / Profiles / Settings）；Projects 多项目列表 + 持久化 + 重启恢复；项目工作台 Overview（状态条、本地 git 配置 matched/drift、关联 Profile、本项目历史）与 Git Identity（preflight / diff / apply / ssh+remote 连接测试）；不绑定项目的 Profiles 复用库；按客户端方式自适应的窗口（最小尺寸 + 记忆几何）。
+- 这轮实际跑过的验证：
+  - `cd desktop && bun run build`（72 模块）通过。
+  - `cd desktop/src-tauri && cargo test` 5 项全过（含新增 `loads_storage_without_project_fields` 旧存储兼容性测试）。
+  - `cd desktop && bun run tauri build` 通过两次（M1/M3/M5），生成 macOS `.app` 与 `.dmg`。
+  - `./harness/init.sh` 通过（bun install + bun run build + cargo check）。
 
-## 本轮改动
+## 本轮改动（Session 004）
 
-- 新增了哪些代码或行为：当前分支 7 个提交的 author/committer 时间均整体后移一天；桌面 UI 从旧 GitScope 风格调整为 Contexa 工作台；profile 表单中的真实姓名占位已换成泛化占位；新增 `lucide-react` 图标依赖。
-- 前端组织结构：`App.tsx` 只保留页面组合；类型进入 `desktop/src/domain/`；Tauri API client 保留在 `desktop/src/services/`；状态流程进入 `desktop/src/hooks/`；通用 UI 进入 `desktop/src/components/`；三个工作区页面进入 `desktop/src/features/workspace/`；格式化工具进入 `desktop/src/lib/`；样式拆成 `desktop/src/styles/base.css` 和 `desktop/src/styles/workbench.css`。
-- 目录/文件路径选择：`Repository path` 改为只读显示 + Tauri 目录选择器；SSH key 路径改为只读显示 + Tauri 文件选择器；主窗口 capability 添加 `dialog:allow-open`。
-- 基础设施或 harness 发生了哪些变化：`harness/feature_list.json` 新增已完成的 `ctx-000` 维护项；`harness/progress.md` 记录本轮证据与风险。
+- M0：把 sessions 002/003 已验证的重构落为两个本地提交（desktop 拆分 + harness 证据）。
+- M1 `ctx-101`：`tauri.conf.json` 默认 1120×760 / minWidth 880 / minHeight 620 / center；加 `tauri-plugin-window-state`；`workbench.css` 改为 fill-height 外壳 + 内部滚动 + auto-fit 网格 + `@container`，去掉全部 `@media` 视口断点。
+- M2 `ctx-102`：两级导航 `AppShell` + `PageHeader`；`ProfilesPanel` 移入 `features/profiles` 由 `ProfilesSection` 包装；新增 `SettingsSection`。
+- M3 `ctx-103`：Rust `Project` 模型 + 5 个命令，`AppStorage` 加 `#[serde(default)]`；前端 `useGitScopeWorkspace`→`useWorkspace` store；`ProjectsList` + `ProjectWorkbench`；重启恢复上次打开项目。
+- M4 `ctx-104`：Rust `link_profile_to_project`；`ProjectOverview`（matched/drift + 关联 Profile）；store 增 history/applyPlan/identityState。
+- M5 `ctx-105`（纯前端）：workbench 加 Overview/Git Identity 标签页；`GitIdentityPanel` 跑 preflight/diff/apply/连接测试；store 增 preflight/connectionResult + applyIdentity/runConnectionTest。
+- 提交：本会话每个模块一个本地提交，全部在 `main`，未 push。
+- 结构：`features/projects`（list / workbench / overview / git-identity）、`features/profiles`、`features/settings`；旧 `features/workspace/` 已清空。
 
 ## 仍损坏或未验证
 
-- 已知缺陷：无已知缺陷。
-- 未验证路径：完整 Tauri dev app 人工点击路径尚未验证；`ctx-001` 的重启后项目恢复还未实现。
-- 下一轮会话需要注意的风险：本地 `main` 已重写历史，相对 `origin/main` 显示 ahead 7 / behind 7；`filter-branch` 留有 `refs/original/refs/heads/main` 本地恢复引用；未 stage、未 commit、未 push。没有测试脚本时，不要把 build/check 误认为完整端到端验证。
+- 已知缺陷：无已知缺陷（构建 / 类型 / 单测 / 打包全绿）。
+- 未验证路径（需 `bun run tauri dev` 人工走查）：窗口几何记忆与最小尺寸约束；导航点击；加 2 仓库→重启→列表恢复；关联 Profile→matched/drift；真实仓库 + ssh key 的完整 apply 端到端。底层 Rust apply 命令自早期会话起未变。
+- 风险：本地 `main` 相对 `origin/main` 仍分叉（早期历史重写），按要求只在本地提交、未 push；`gitscope.json` 存储文件名暂未改为 `contexa.json`（避免迁移）。
 
 ## 下一步最佳动作
 
-- 最高优先级未完成功能：`ctx-001` 选择并记住当前项目。
-- 为什么它是下一步：README roadmap 的 Phase 1 从项目选择、项目扫描和配置仪表盘开始；没有项目选择，后续扫描和编辑都没有稳定输入。
-- 什么结果才算 passing：用户能选择项目目录，界面显示当前项目路径和基础状态，重启后能恢复或清晰提示重新选择，并记录验证证据。目录选择器入口已完成，剩余重点是持久化与重启恢复。
-- 这一步中哪些东西不要动：不要修改全局 Git/SSH/shell 配置；不要读取或展示私钥、token、密码或 `.env` 明文值；不要引入非 Bun 包管理器。
+- v1 已完成。下一阶段进入 README roadmap Phase 2：`ctx-002` 扫描项目规则 / MCP / env 上下文文件（在工作台加新标签页或区块），随后是 `ctx-004` 规则与 MCP 原地编辑、`ctx-005` 通用 policy/diff、`ctx-006` 启动器。
+- 开新功能前：建议先做一次 dev run 人工端到端走查（见“未验证路径”），并保持每个小模块单独验证 + 本地提交的节奏。
+- 不要动的红线：不改全局 Git/SSH/shell 配置；不读取或展示私钥 / token / `.env` 明文；保持 Bun；写入仅限项目目录内。
 
 ## 命令
 
 - 启动命令：`cd desktop && bun run tauri dev`
 - 验证命令：`./harness/init.sh`
-- 定向调试命令：`cd desktop && bun run build`；`cd desktop/src-tauri && cargo check`
+- 定向调试命令：`cd desktop && bun run build`；`cd desktop/src-tauri && cargo check`；`cd desktop/src-tauri && cargo test`

@@ -15,9 +15,9 @@ import type {
   RepositoryStatus,
 } from "../../domain/gitscope";
 
-type ReviewPanelProps = {
+type GitIdentityPanelProps = {
   status: RepositoryStatus | null;
-  selectedProfile: GitIdentityProfile | null;
+  linkedProfile: GitIdentityProfile | null;
   applyPlan: ApplyPlan | null;
   preflight: PreflightResult | null;
   connectionResult: ConnectionTestResult | null;
@@ -25,12 +25,12 @@ type ReviewPanelProps = {
   onApply: () => void;
   onTestSsh: () => void;
   onTestRemote: () => void;
-  onOpenProfiles: () => void;
+  onGoToOverview: () => void;
 };
 
-export function ReviewPanel({
+export function GitIdentityPanel({
   status,
-  selectedProfile,
+  linkedProfile,
   applyPlan,
   preflight,
   connectionResult,
@@ -38,25 +38,35 @@ export function ReviewPanel({
   onApply,
   onTestSsh,
   onTestRemote,
-  onOpenProfiles,
-}: ReviewPanelProps) {
+  onGoToOverview,
+}: GitIdentityPanelProps) {
   if (!status) {
     return (
       <section className="panel empty-state-panel">
         <Network aria-hidden="true" size={24} />
-        <h3>No repository detected</h3>
+        <h3>Not a git repository</h3>
+        <p className="empty-copy">
+          Git identity can only be applied inside a git repository.
+        </p>
       </section>
     );
   }
 
-  if (!selectedProfile) {
+  if (!linkedProfile) {
     return (
       <section className="panel empty-state-panel">
         <ShieldCheck aria-hidden="true" size={24} />
-        <h3>No profile selected</h3>
-        <button className="primary-action icon-button" onClick={onOpenProfiles} type="button">
+        <h3>No profile linked</h3>
+        <p className="empty-copy">
+          Link a profile in Overview to preview and apply its git identity.
+        </p>
+        <button
+          className="primary-action icon-button"
+          onClick={onGoToOverview}
+          type="button"
+        >
           <Play aria-hidden="true" size={17} />
-          <span>Create profile</span>
+          <span>Go to Overview</span>
         </button>
       </section>
     );
@@ -68,7 +78,7 @@ export function ReviewPanel({
         <div className="panel-heading">
           <div>
             <span className="eyebrow">Apply Target</span>
-            <h3>{selectedProfile.label}</h3>
+            <h3>{linkedProfile.label}</h3>
           </div>
           <StatusBadge
             status={preflight?.canApply ? "passed" : "warning"}
@@ -87,12 +97,17 @@ export function ReviewPanel({
           </div>
           <div>
             <dt>SSH command</dt>
-            <dd>{applyPlan?.sshCommand ?? "Waiting for profile"}</dd>
+            <dd>{applyPlan?.sshCommand ?? "Waiting for plan"}</dd>
           </div>
         </dl>
 
         <div className="review-actions">
-          <button className="icon-button" disabled={busy} onClick={onTestSsh} type="button">
+          <button
+            className="icon-button"
+            disabled={busy}
+            onClick={onTestSsh}
+            type="button"
+          >
             <Wifi aria-hidden="true" size={17} />
             <span>SSH</span>
           </button>
@@ -107,12 +122,14 @@ export function ReviewPanel({
           </button>
           <button
             className="primary-action icon-button"
-            disabled={busy || !preflight?.canApply}
+            disabled={busy || !preflight?.canApply || applyPlan?.changes.length === 0}
             onClick={onApply}
             type="button"
           >
             <Play aria-hidden="true" size={17} />
-            <span>Apply</span>
+            <span>
+              {applyPlan?.changes.length === 0 ? "Already applied" : "Apply"}
+            </span>
           </button>
         </div>
       </section>

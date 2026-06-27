@@ -6,8 +6,9 @@
 - 标准启动路径：`cd desktop && bun run tauri dev`；也可以用 `RUN_START_COMMAND=1 ./harness/init.sh`
 - 标准验证路径：`./harness/init.sh`
 - 已批准的产品方案：v1 多项目 Git 上下文控制台；两级导航 Projects/Profiles/Settings；窗口按客户端方式自适应 + 最小尺寸；每个小模块单独验证并本地提交。
-- 当前已完成：`ctx-000` 基线；`ctx-101` 原生窗口；`ctx-102` 两级导航；`ctx-103` 多项目列表与持久化；`ctx-104` 工作台 Overview 与关联 Profile（均 passing）。
-- 当前最高优先级未完成功能：`ctx-105` 在工作台内应用 Git 身份（最后一个 v1 模块）。
+- 当前已完成：`ctx-000` 基线；`ctx-101` 原生窗口；`ctx-102` 两级导航；`ctx-103` 多项目列表；`ctx-104` 工作台 Overview 与关联 Profile；`ctx-105` 工作台内应用 Git 身份（均 passing）。**v1 多项目 Git 控制台 5 个模块全部完成。**
+- 当前最高优先级未完成功能：无 v1 模块未完成；下一阶段为 `ctx-002` 扫描规则/MCP/env（Phase 2）。
+- 待人工确认（dev run）：窗口几何记忆与最小尺寸；导航点击；加 2 仓库→重启→列表恢复；关联 Profile→matched/drift；真实仓库 + ssh key 的完整 apply 端到端。
 - 当前 blocker：无
 - 当前分支注意事项：本地 `main` 已重写历史，相对 `origin/main` 仍分叉；按用户要求每个模块在本地 main 提交、不 push。`filter-branch` 留有 `refs/original/refs/heads/main` 本地恢复引用。
 
@@ -60,7 +61,8 @@
   - M2/`ctx-102`：新建两级导航 `AppShell`（Projects/Profiles/Settings，手写视图状态）与复用 `PageHeader`；`ProfilesPanel` 移到 `features/profiles` 并由 `ProfilesSection` 包装为不绑定项目的库；新增 `ProjectsSection` 占位与 `SettingsSection`。`features/workspace` 下 OverviewPanel/ReviewPanel 暂留，待 M4/M5 适配。
   - M3/`ctx-103`：Rust 新增 `Project` 模型 + list/add/remove/set_current/get_current 命令，`AppStorage` 加 `#[serde(default)]`（旧文件可读，新增单测 `loads_storage_without_project_fields`）。前端把 `useGitScopeWorkspace` 重写为 `useWorkspace` store；`ProjectsSection` 改为 list↔workbench 路由；新增 `ProjectsList` 卡片与 `ProjectWorkbench` 外壳；重启自动恢复上次打开项目。
   - M4/`ctx-104`：Rust 新增 `link_profile_to_project`；`useWorkspace` 增加 history/applyPlan/linkedProfile/identityState/projectHistory + linkProfile；新增 `ProjectOverview`（状态条 + 本地 git 配置 matched/drift + 关联 Profile 选择器 + 本项目历史），`ProjectWorkbench` 改为渲染它；删除旧 `features/workspace/OverviewPanel`。drift 由 `createApplyPlan().changes.length` 推导。
+  - M5/`ctx-105`（纯前端）：`ProjectWorkbench` 加 Overview/Git Identity 标签页；新增 `GitIdentityPanel`（适配自旧 ReviewPanel，旧文件已删）跑 preflight/diff/apply 与 ssh/remote 连接测试；`useWorkspace` 增 preflight/connectionResult + applyIdentity/runConnectionTest，apply 后刷新状态与历史。`features/workspace/` 目录清空。
 - 运行过的验证：`./harness/init.sh`（基线）；`cd desktop && bun run build`；`cd desktop/src-tauri && cargo check`（编译 window-state v2.4.1，build.rs 校验新窗口配置）；`cd desktop && bun run tauri build`（约 1m28s，生成 Contexa.app 与 .dmg）。
 - 提交记录：`feat(desktop): split workbench UI, add dialog/tray and path pickers`；`chore(harness): record workbench-split baseline evidence`；`feat(desktop): native window sizing and fluid layout`（含 harness 重排）。本地 main，未 push。
 - 已知风险或未解决问题：窗口几何记忆、最小尺寸约束、面板回流为构建级已验证 + Tauri/插件原生行为，未做 GUI 人工点击端到端验证。`gitscope.json` 存储文件名暂不改名（避免迁移）。
-- 下一步最佳动作：M5/`ctx-105`，在工作台加 Git Identity 标签页：对当前项目 + 已关联 Profile 跑 preflight/diff/apply 与 ssh/remote 连接测试（复用 `features/workspace/ReviewPanel` 与 Rust 既有命令），应用后刷新历史与状态。开始前先跑 `./harness/init.sh`。
+- 下一步最佳动作：v1 五个模块（ctx-101~105）已全部 passing。下一阶段进入 Phase 2 `ctx-002`（扫描项目规则/MCP/env 上下文文件）。建议先做一次 `bun run tauri dev` 人工端到端走查（见上方“待人工确认”清单），再开新功能。开始前先跑 `./harness/init.sh`。

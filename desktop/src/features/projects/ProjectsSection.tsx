@@ -1,6 +1,9 @@
 import type {
   ApplyHistoryItem,
+  ApplyPlan,
+  ConnectionTestResult,
   GitIdentityProfile,
+  PreflightResult,
   Project,
   RepositoryStatus,
 } from "../../domain/gitscope";
@@ -17,6 +20,9 @@ type ProjectsSectionProps = {
   linkedProfile: GitIdentityProfile | null;
   identityState: IdentityState;
   projectHistory: ApplyHistoryItem[];
+  applyPlan: ApplyPlan | null;
+  preflight: PreflightResult | null;
+  connectionResult: ConnectionTestResult | null;
   busy: boolean;
   message: string;
   onAddProject: () => void;
@@ -24,6 +30,9 @@ type ProjectsSectionProps = {
   onRemoveProject: (project: Project) => void;
   onCloseProject: () => void;
   onLinkProfile: (profileId: string | null) => void;
+  onApply: () => void;
+  onTestSsh: () => void;
+  onTestRemote: () => void;
 };
 
 /**
@@ -39,6 +48,9 @@ export function ProjectsSection({
   linkedProfile,
   identityState,
   projectHistory,
+  applyPlan,
+  preflight,
+  connectionResult,
   busy,
   message,
   onAddProject,
@@ -46,20 +58,30 @@ export function ProjectsSection({
   onRemoveProject,
   onCloseProject,
   onLinkProfile,
+  onApply,
+  onTestSsh,
+  onTestRemote,
 }: ProjectsSectionProps) {
   if (openProject) {
     return (
       <ProjectWorkbench
+        key={openProject.id}
         project={openProject}
         status={openProjectStatus}
         profiles={profiles}
         linkedProfile={linkedProfile}
         identityState={identityState}
         history={projectHistory}
+        applyPlan={applyPlan}
+        preflight={preflight}
+        connectionResult={connectionResult}
         busy={busy}
         message={message}
         onBack={onCloseProject}
         onLinkProfile={onLinkProfile}
+        onApply={onApply}
+        onTestSsh={onTestSsh}
+        onTestRemote={onTestRemote}
       />
     );
   }

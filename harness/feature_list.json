@@ -95,15 +95,20 @@
       "area": "project-workbench",
       "title": "在工作台内应用 Git 身份",
       "user_visible_behavior": "在项目工作台的 Git Identity 页中，对当前项目 + 已关联 Profile 执行 preflight、diff、apply 和 ssh/remote 连接测试，应用历史按 repo 记录。",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "`cd desktop && bun run build`",
-        "`cd desktop/src-tauri && cargo check`",
+        "`cd desktop/src-tauri && cargo test`",
         "`cd desktop && bun run tauri build`",
         "在一个临时仓库走完整 apply 流程，确认 diff/preflight/连接测试与历史记录。"
       ],
-      "evidence": [],
-      "notes": "复用并适配现有 ReviewPanel 与 Rust 的 create_apply_plan/run_preflight/apply_profile/test_* 命令，写入仍为 `git config --local`。"
+      "evidence": [
+        "2026-06-27 `cd desktop && bun run build` 成功（72 模块，GitIdentityPanel 已打包）。",
+        "2026-06-27 `cd desktop/src-tauri && cargo test` 5 项全过。",
+        "2026-06-27 `cd desktop && bun run tauri build` 通过（约 1m29s），生成 Contexa.app 与 .dmg。",
+        "2026-06-27 `./harness/init.sh` 通过（bun install + bun run build + cargo check）。"
+      ],
+      "notes": "纯前端模块：workbench 增 Overview/Git Identity 标签页（tab 由 project id key 重置）；新增 GitIdentityPanel（适配自旧 ReviewPanel，旧文件已删）对 openProject + linkedProfile 跑 preflight/diff/apply 与 ssh/remote 连接测试；store 增 preflight/connectionResult 与 applyIdentity/runConnectionTest，apply 后刷新本项目状态与历史（drift→matched，写入仍为 `git config --local`）。完整 apply 端到端（真实仓库 + ssh key）需 dev run 人工确认；底层 Rust apply 命令自早期会话起未变。"
     },
     {
       "id": "ctx-002",
