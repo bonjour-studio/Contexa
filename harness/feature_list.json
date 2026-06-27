@@ -1,0 +1,113 @@
+{
+  "project": "Contexa",
+  "last_updated": "2026-06-27",
+  "rules": {
+    "single_active_feature": true,
+    "passing_requires_evidence": true,
+    "do_not_skip_verification": true
+  },
+  "status_legend": {
+    "not_started": "功能还没开始做。",
+    "in_progress": "这个功能是当前唯一正在进行的任务。",
+    "blocked": "因为已记录的阻塞问题，当前无法继续推进。",
+    "passing": "要求的验证已经通过，并且证据已经记录。"
+  },
+  "features": [
+    {
+      "id": "ctx-001",
+      "priority": 1,
+      "area": "project-selection",
+      "title": "选择并记住当前项目",
+      "user_visible_behavior": "用户可以选择一个本地项目目录，并在主界面看到当前项目路径和基础状态。",
+      "status": "not_started",
+      "verification": [
+        "运行 `cd desktop && bun run tauri dev` 打开应用。",
+        "选择一个本地项目目录。",
+        "确认主界面显示所选项目路径。",
+        "关闭并重启应用，确认仍能恢复上次选择或清晰提示重新选择。"
+      ],
+      "evidence": [],
+      "notes": "Phase 1 roadmap entry: project selection."
+    },
+    {
+      "id": "ctx-002",
+      "priority": 2,
+      "area": "project-scanner",
+      "title": "扫描项目上下文文件",
+      "user_visible_behavior": "用户选择项目后，可以看到规则文件、MCP 配置、环境声明、Git/SSH 引用等上下文文件是否存在。",
+      "status": "not_started",
+      "verification": [
+        "准备一个包含项目规则文件、`.mcp.json`、`.envrc` 或 Git 配置的测试项目。",
+        "在 Contexa 中选择该项目。",
+        "确认扫描结果列出检测到的上下文文件和缺失项。",
+        "确认敏感内容不会被明文显示。"
+      ],
+      "evidence": [],
+      "notes": "Do not read or print private keys, tokens, or plaintext `.env` values."
+    },
+    {
+      "id": "ctx-003",
+      "priority": 3,
+      "area": "dashboard",
+      "title": "展示项目上下文仪表盘",
+      "user_visible_behavior": "用户可以在一个工作台界面中看到项目状态、风险、差异和下一步动作。",
+      "status": "not_started",
+      "verification": [
+        "打开已选择项目的主界面。",
+        "确认页面展示项目路径、扫描状态、风险摘要和推荐动作。",
+        "确认空状态、加载状态和扫描失败状态都可理解。",
+        "运行 `cd desktop && bun run build`。"
+      ],
+      "evidence": [],
+      "notes": "UI should be dense, work-focused, and aligned with desktop subproject conventions."
+    },
+    {
+      "id": "ctx-004",
+      "priority": 4,
+      "area": "rules-and-mcp",
+      "title": "查看并原地编辑规则和 MCP 配置",
+      "user_visible_behavior": "用户可以查看项目规则文件和 MCP 配置，并在应用内原地编辑。",
+      "status": "not_started",
+      "verification": [
+        "选择包含规则文件和 MCP 配置的测试项目。",
+        "打开规则或 MCP 配置详情。",
+        "修改一个非敏感字段。",
+        "确认应用展示写入前 diff，并且只写入用户确认的项目内文件。"
+      ],
+      "evidence": [],
+      "notes": "Writes must support dry-run/diff before apply."
+    },
+    {
+      "id": "ctx-005",
+      "priority": 5,
+      "area": "policy-diff-validation",
+      "title": "校验写入范围和敏感数据风险",
+      "user_visible_behavior": "用户在应用任何配置变更前，可以看到写入范围、敏感数据风险和可撤销的 diff。",
+      "status": "not_started",
+      "verification": [
+        "尝试写入项目目录内允许的配置文件，确认 diff 可见且可应用。",
+        "尝试写入项目目录外路径，确认操作被拒绝。",
+        "尝试保存明显的 token 或私钥样式内容，确认应用阻止或警告。",
+        "运行 `cd desktop && bun run build` 和 `cd desktop/src-tauri && cargo check`。"
+      ],
+      "evidence": [],
+      "notes": "Must preserve repo security red lines."
+    },
+    {
+      "id": "ctx-006",
+      "priority": 6,
+      "area": "launcher",
+      "title": "带项目上下文启动开发工具",
+      "user_visible_behavior": "用户可以从 Contexa 启动受支持的开发工具，并只向当前进程树注入项目上下文。",
+      "status": "not_started",
+      "verification": [
+        "配置一个测试项目的工具启动项。",
+        "从 Contexa 启动目标工具。",
+        "确认启动进程使用当前项目目录和声明的上下文引用。",
+        "确认不会修改全局 shell、Git 或 SSH 配置。"
+      ],
+      "evidence": [],
+      "notes": "No global config writes by default."
+    }
+  ]
+}

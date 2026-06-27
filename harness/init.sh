@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+if ! command -v bun >/dev/null 2>&1 && [ -x "$HOME/.bun/bin/bun" ]; then
+  export PATH="$HOME/.bun/bin:$PATH"
+fi
+
+# 按项目实际情况设置这些命令。
+INSTALL_CMD=(bash -lc "cd desktop && bun install")
+VERIFY_CMD=(bash -lc "cd desktop && bun run build && cd src-tauri && cargo check")
+START_CMD=(bash -lc "cd desktop && bun run tauri dev")
+
+echo "==> 当前目录: $PWD"
+echo "==> 同步依赖"
+"${INSTALL_CMD[@]}"
+
+echo "==> 运行基础验证"
+"${VERIFY_CMD[@]}"
+
+echo "==> 启动命令"
+printf '    %q' "${START_CMD[@]}"
+printf '\n'
+
+if [ "${RUN_START_COMMAND:-0}" = "1" ]; then
+  echo "==> 启动应用"
+  exec "${START_CMD[@]}"
+fi
+
+echo "如果希望 init.sh 直接启动应用，请设置 RUN_START_COMMAND=1。"
