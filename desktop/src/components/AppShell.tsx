@@ -1,11 +1,12 @@
-import { FolderGit2, Settings, Users } from "lucide-react";
+import { FolderGit2, KeyRound, Settings, Users } from "lucide-react";
 import type { ReactNode } from "react";
 
-export type AppSection = "projects" | "profiles" | "settings";
+export type AppSection = "projects" | "profiles" | "ssh" | "settings";
 
 const navItems = [
   { id: "projects", label: "Projects", icon: FolderGit2 },
   { id: "profiles", label: "Profiles", icon: Users },
+  { id: "ssh", label: "SSH Keys", icon: KeyRound },
   { id: "settings", label: "Settings", icon: Settings },
 ] satisfies Array<{
   id: AppSection;
@@ -55,12 +56,6 @@ export function AppShell({ section, children, onSectionChange }: AppShellProps) 
             );
           })}
         </nav>
-
-        <section className="sidebar-panel">
-          <span className="eyebrow">Local-first</span>
-          <strong>No secrets stored</strong>
-          <p>References only · diff before apply</p>
-        </section>
       </aside>
 
       <section className="workspace">{children}</section>

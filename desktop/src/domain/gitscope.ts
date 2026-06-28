@@ -65,6 +65,29 @@ export type SshKeyStatus = {
   message?: string | null;
 };
 
+export type SshKeyType = "ed25519" | "rsa" | "ecdsa";
+
+export type SshKeyInfo = {
+  path: string;
+  publicPath?: string | null;
+  name: string;
+  keyType?: string | null;
+  bits?: number | null;
+  comment?: string | null;
+  fingerprint?: string | null;
+  hasPrivate: boolean;
+  hasPublic: boolean;
+  source: "scan" | "manual";
+};
+
+export type GenerateKeyInput = {
+  name: string;
+  keyType: SshKeyType;
+  bits?: number | null;
+  comment: string;
+  passphrase: string;
+};
+
 export type ConfigChange = {
   key: string;
   currentValue?: string | null;

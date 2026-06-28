@@ -1,5 +1,6 @@
 import { KeyRound, RotateCcw, Save } from "lucide-react";
-import type { FormEvent, ReactNode } from "react";
+import type { FormEvent } from "react";
+import { ControlRow } from "../../components/Field";
 import { StatusBadge } from "../../components/StatusBadge";
 import { emptyProfile, ProfileInput, SshKeyStatus } from "../../domain/gitscope";
 
@@ -116,14 +117,5 @@ export function ProfileForm({
         </button>
       </div>
     </form>
-  );
-}
-
-function ControlRow({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="row control">
-      <span className="field-label">{label}</span>
-      {children}
-    </div>
   );
 }

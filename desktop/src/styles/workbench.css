@@ -49,8 +49,7 @@
   margin: 0;
 }
 
-.brand-block p,
-.sidebar-panel p {
+.brand-block p {
   color: var(--muted);
   font-size: var(--text-sm);
   margin: 2px 0 0;
@@ -86,24 +85,6 @@
 
 .nav-item.active:hover:not(:disabled) {
   background: var(--accent-soft);
-}
-
-.sidebar-panel {
-  border-top: 0.5px solid var(--border);
-  display: grid;
-  gap: 4px;
-  margin-top: auto;
-  padding: 16px 6px 0;
-}
-
-.sidebar-panel strong {
-  font-weight: 600;
-}
-
-.sidebar-panel p {
-  align-items: center;
-  display: inline-flex;
-  gap: var(--space-1);
 }
 
 .workspace {

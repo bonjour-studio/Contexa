@@ -1,5 +1,5 @@
 import { ArrowLeft, Plus } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import type { FormEvent } from "react";
 import { PageHeader } from "../../components/PageHeader";
 import {
   emptyProfile,
@@ -20,6 +20,8 @@ type ProfilesSectionProps = {
   onChooseSshKeyFile: () => void;
   onEdit: (profile: GitIdentityProfile) => void;
   onDelete: (profile: GitIdentityProfile) => void;
+  editing: boolean;
+  onEditingChange: (editing: boolean) => void;
 };
 
 /**
@@ -37,27 +39,27 @@ export function ProfilesSection({
   onChooseSshKeyFile,
   onEdit,
   onDelete,
+  editing,
+  onEditingChange,
 }: ProfilesSectionProps) {
-  const [editing, setEditing] = useState(false);
-
   const startAdd = () => {
     onFormChange(emptyProfile);
-    setEditing(true);
+    onEditingChange(true);
   };
 
   const startEdit = (profile: GitIdentityProfile) => {
     onEdit(profile);
-    setEditing(true);
+    onEditingChange(true);
   };
 
   const back = () => {
     onFormChange(emptyProfile);
-    setEditing(false);
+    onEditingChange(false);
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     if (await onSave(event)) {
-      setEditing(false);
+      onEditingChange(false);
     }
   };
 

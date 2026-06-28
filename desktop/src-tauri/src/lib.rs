@@ -113,6 +113,10 @@ struct AppStorage {
     apply_history: Vec<ApplyHistoryItem>,
     #[serde(default)]
     projects: Vec<Project>,
+    // Private-key paths the user added from outside ~/.ssh (referenced, not
+    // copied). Keys inside ~/.ssh are discovered by scanning and not stored.
+    #[serde(default)]
+    ssh_keys: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -124,6 +128,34 @@ struct SshKeyStatus {
     is_file: bool,
     readable: bool,
     message: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SshKeyInfo {
+    /// Absolute path to the private key (may not exist if only a .pub is present).
+    path: String,
+    /// Absolute path to the public key, when a matching `.pub` exists.
+    public_path: Option<String>,
+    name: String,
+    key_type: Option<String>,
+    bits: Option<u32>,
+    comment: Option<String>,
+    fingerprint: Option<String>,
+    has_private: bool,
+    has_public: bool,
+    /// "scan" for keys discovered in ~/.ssh, "manual" for referenced keys.
+    source: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GenerateKeyInput {
+    name: String,
+    key_type: String,
+    bits: Option<u32>,
+    comment: String,
+    passphrase: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -513,6 +545,276 @@ fn test_git_ls_remote(
             .arg(remote_name)
             .current_dir(repo_root),
     )
+}
+
+#[tauri::command]
+fn list_ssh_keys(app: tauri::AppHandle) -> CommandResult<Vec<SshKeyInfo>> {
+    let mut keys: Vec<SshKeyInfo> = Vec::new();
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+
+    // 1) Discover key pairs in ~/.ssh via their .pub files.
+    if let Some(dir) = ssh_dir() {
+        if let Ok(entries) = fs::read_dir(&dir) {
+            let mut pubs: Vec<PathBuf> = entries
+                .flatten()
+                .map(|entry| entry.path())
+                .filter(|path| path.extension().map(|ext| ext == "pub").unwrap_or(false))
+                .collect();
+            pubs.sort();
+            for pub_file in pubs {
+                let private = strip_pub(&pub_file);
+                let info = ssh_key_info(&private, "scan");
+                if seen.insert(info.path.clone()) {
+                    keys.push(info);
+                }
+            }
+        }
+    }
+
+    // 2) Append manually-referenced keys recorded in storage.
+    for raw in read_storage(&app)?.ssh_keys {
+        let private = strip_pub(&expand_tilde(raw.trim())?);
+        let info = ssh_key_info(&private, "manual");
+        if seen.insert(info.path.clone()) {
+            keys.push(info);
+        }
+    }
+
+    Ok(keys)
+}
+
+#[tauri::command]
+fn add_ssh_key(app: tauri::AppHandle, path: String) -> CommandResult<Vec<SshKeyInfo>> {
+    let private = strip_pub(&expand_tilde(path.trim())?);
+    if !private.exists() && !pub_path(&private).exists() {
+        return Err(CommandError::new("invalid_path", "That key file does not exist."));
+    }
+
+    let value = path_string(&private);
+    let mut storage = read_storage(&app)?;
+    if !storage.ssh_keys.iter().any(|existing| existing == &value) {
+        storage.ssh_keys.push(value);
+        write_storage(&app, &storage)?;
+    }
+
+    list_ssh_keys(app)
+}
+
+#[tauri::command]
+fn remove_ssh_key(app: tauri::AppHandle, path: String) -> CommandResult<Vec<SshKeyInfo>> {
+    let value = path_string(&strip_pub(&expand_tilde(path.trim())?));
+    let mut storage = read_storage(&app)?;
+    storage
+        .ssh_keys
+        .retain(|existing| existing != &value && existing != path.trim());
+    write_storage(&app, &storage)?;
+
+    list_ssh_keys(app)
+}
+
+#[tauri::command]
+fn delete_ssh_key(app: tauri::AppHandle, path: String) -> CommandResult<Vec<SshKeyInfo>> {
+    let private = strip_pub(&expand_tilde(path.trim())?);
+    let public = pub_path(&private);
+
+    for file in [&private, &public] {
+        if file.exists() {
+            fs::remove_file(file).map_err(|err| {
+                CommandError::new(
+                    "delete_failed",
+                    format!("Could not delete {}: {err}", path_string(file)),
+                )
+            })?;
+        }
+    }
+
+    let value = path_string(&private);
+    let mut storage = read_storage(&app)?;
+    storage.ssh_keys.retain(|existing| existing != &value);
+    write_storage(&app, &storage)?;
+
+    list_ssh_keys(app)
+}
+
+#[tauri::command]
+fn read_public_key(path: String) -> CommandResult<String> {
+    let public = pub_path(&strip_pub(&expand_tilde(path.trim())?));
+    fs::read_to_string(&public)
+        .map(|contents| contents.trim().to_owned())
+        .map_err(|err| {
+            CommandError::new("read_failed", format!("Could not read public key: {err}"))
+        })
+}
+
+#[tauri::command]
+fn reveal_ssh_key(path: String) -> CommandResult<()> {
+    let expanded = expand_tilde(path.trim())?;
+    Command::new("open")
+        .arg("-R")
+        .arg(&expanded)
+        .status()
+        .map_err(|err| CommandError::new("reveal_failed", err.to_string()))?;
+    Ok(())
+}
+
+#[tauri::command]
+fn generate_ssh_key(input: GenerateKeyInput) -> CommandResult<SshKeyInfo> {
+    let name = input.name.trim();
+    if name.is_empty() {
+        return Err(CommandError::new("invalid_name", "Key file name is required."));
+    }
+    if name.contains('/') || name.contains('\\') || name.contains("..") {
+        return Err(CommandError::new(
+            "invalid_name",
+            "Use a plain file name; the key is created in ~/.ssh.",
+        ));
+    }
+    let key_type = match input.key_type.as_str() {
+        "ed25519" | "rsa" | "ecdsa" => input.key_type.as_str(),
+        _ => return Err(CommandError::new("invalid_type", "Unsupported key type.")),
+    };
+
+    let dir = ssh_dir()
+        .ok_or_else(|| CommandError::new("home_unavailable", "Could not resolve ~/.ssh"))?;
+    fs::create_dir_all(&dir).map_err(|err| {
+        CommandError::new("ssh_dir_failed", format!("Could not create ~/.ssh: {err}"))
+    })?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = fs::set_permissions(&dir, fs::Permissions::from_mode(0o700));
+    }
+
+    let target = dir.join(name);
+    if target.exists() || pub_path(&target).exists() {
+        return Err(CommandError::new(
+            "key_exists",
+            "A key with that name already exists in ~/.ssh.",
+        ));
+    }
+
+    let mut command = Command::new("ssh-keygen");
+    command.arg("-t").arg(key_type);
+    if key_type != "ed25519" {
+        if let Some(bits) = input.bits {
+            command.arg("-b").arg(bits.to_string());
+        }
+    }
+    command
+        .arg("-C")
+        .arg(input.comment.trim())
+        .arg("-f")
+        .arg(&target)
+        .arg("-N")
+        .arg(&input.passphrase);
+
+    let output = command
+        .output()
+        .map_err(|err| CommandError::new("keygen_failed", err.to_string()))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_owned();
+        return Err(CommandError::new(
+            "keygen_failed",
+            if stderr.is_empty() {
+                "ssh-keygen failed".to_owned()
+            } else {
+                stderr
+            },
+        ));
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = fs::set_permissions(&target, fs::Permissions::from_mode(0o600));
+    }
+
+    Ok(ssh_key_info(&target, "scan"))
+}
+
+fn ssh_dir() -> Option<PathBuf> {
+    home_dir().map(|home| home.join(".ssh"))
+}
+
+fn pub_path(private: &Path) -> PathBuf {
+    let mut value = private.as_os_str().to_os_string();
+    value.push(".pub");
+    PathBuf::from(value)
+}
+
+fn strip_pub(path: &Path) -> PathBuf {
+    if path.extension().map(|ext| ext == "pub").unwrap_or(false) {
+        path.with_extension("")
+    } else {
+        path.to_path_buf()
+    }
+}
+
+fn ssh_key_info(private: &Path, source: &str) -> SshKeyInfo {
+    let public = pub_path(private);
+    let has_public = public.exists();
+    let has_private = private.exists();
+    let metadata_from = if has_public {
+        Some(public.clone())
+    } else if has_private {
+        Some(private.to_path_buf())
+    } else {
+        None
+    };
+
+    let (bits, fingerprint, comment, key_type) = metadata_from
+        .as_deref()
+        .and_then(keygen_metadata)
+        .unwrap_or((None, None, None, None));
+
+    SshKeyInfo {
+        path: path_string(private),
+        public_path: has_public.then(|| path_string(&public)),
+        name: private
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_default(),
+        key_type,
+        bits,
+        comment,
+        fingerprint,
+        has_private,
+        has_public,
+        source: source.to_owned(),
+    }
+}
+
+#[allow(clippy::type_complexity)]
+fn keygen_metadata(
+    path: &Path,
+) -> Option<(Option<u32>, Option<String>, Option<String>, Option<String>)> {
+    let output = Command::new("ssh-keygen")
+        .arg("-l")
+        .arg("-f")
+        .arg(path)
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let parts: Vec<&str> = stdout.split_whitespace().collect();
+    if parts.len() < 3 {
+        return None;
+    }
+
+    let bits = parts[0].parse::<u32>().ok();
+    let fingerprint = Some(parts[1].to_owned());
+    let key_type = parts
+        .last()
+        .map(|token| token.trim_matches(|c| c == '(' || c == ')').to_owned());
+    let comment = if parts.len() > 3 {
+        Some(parts[2..parts.len() - 1].join(" "))
+    } else {
+        None
+    };
+
+    Some((bits, fingerprint, comment, key_type))
 }
 
 fn normalize_profile_input(profile: ProfileInput) -> CommandResult<ProfileInput> {
@@ -1193,6 +1495,13 @@ pub fn run() {
             link_profile_to_project,
             list_apply_history,
             check_ssh_key,
+            list_ssh_keys,
+            add_ssh_key,
+            remove_ssh_key,
+            delete_ssh_key,
+            read_public_key,
+            reveal_ssh_key,
+            generate_ssh_key,
             create_apply_plan,
             run_preflight,
             apply_profile,

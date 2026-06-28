@@ -5,11 +5,13 @@ import type {
   ApplyResult,
   CommandError,
   ConnectionTestResult,
+  GenerateKeyInput,
   GitIdentityProfile,
   PreflightResult,
   ProfileInput,
   Project,
   RepositoryStatus,
+  SshKeyInfo,
   SshKeyStatus,
 } from "../domain/gitscope";
 
@@ -18,11 +20,13 @@ export type {
   ApplyPlan,
   ApplyResult,
   ConnectionTestResult,
+  GenerateKeyInput,
   GitIdentityProfile,
   PreflightResult,
   ProfileInput,
   Project,
   RepositoryStatus,
+  SshKeyInfo,
   SshKeyStatus,
 };
 
@@ -56,6 +60,27 @@ export const gitscopeApi = {
   },
   checkSshKey(path: string) {
     return invoke<SshKeyStatus>("check_ssh_key", { path });
+  },
+  listSshKeys() {
+    return invoke<SshKeyInfo[]>("list_ssh_keys");
+  },
+  addSshKey(path: string) {
+    return invoke<SshKeyInfo[]>("add_ssh_key", { path });
+  },
+  removeSshKey(path: string) {
+    return invoke<SshKeyInfo[]>("remove_ssh_key", { path });
+  },
+  deleteSshKey(path: string) {
+    return invoke<SshKeyInfo[]>("delete_ssh_key", { path });
+  },
+  readPublicKey(path: string) {
+    return invoke<string>("read_public_key", { path });
+  },
+  revealSshKey(path: string) {
+    return invoke<void>("reveal_ssh_key", { path });
+  },
+  generateSshKey(input: GenerateKeyInput) {
+    return invoke<SshKeyInfo>("generate_ssh_key", { input });
   },
   createApplyPlan(path: string, profile: GitIdentityProfile) {
     return invoke<ApplyPlan>("create_apply_plan", { path, profile });

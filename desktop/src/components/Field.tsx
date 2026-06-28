@@ -18,3 +18,22 @@ export function FieldRow({
     </div>
   );
 }
+
+/**
+ * Like FieldRow but the value cell holds an interactive control (input /
+ * select / picker), which stretches to fill the row.
+ */
+export function ControlRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="row control">
+      <span className="field-label">{label}</span>
+      {children}
+    </div>
+  );
+}

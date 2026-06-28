@@ -4,11 +4,13 @@ import {
   ApplyPlan,
   ConnectionTestResult,
   emptyProfile,
+  GenerateKeyInput,
   GitIdentityProfile,
   PreflightResult,
   ProfileInput,
   Project,
   RepositoryStatus,
+  SshKeyInfo,
   SshKeyStatus,
 } from "../domain/gitscope";
 import { commandErrorMessage, gitscopeApi } from "../services/gitscope";
@@ -24,6 +26,7 @@ export function useWorkspace() {
   const [profiles, setProfiles] = useState<GitIdentityProfile[]>([]);
   const [profileForm, setProfileForm] = useState<ProfileInput>(emptyProfile);
   const [keyStatus, setKeyStatus] = useState<SshKeyStatus | null>(null);
+  const [sshKeys, setSshKeys] = useState<SshKeyInfo[]>([]);
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectStatuses, setProjectStatuses] = useState<
@@ -368,6 +371,109 @@ export function useWorkspace() {
     }
   }
 
+  async function refreshSshKeys() {
+    try {
+      setSshKeys(await gitscopeApi.listSshKeys());
+    } catch (error) {
+      setMessage(commandErrorMessage(error));
+    }
+  }
+
+  async function addSshKeyFromFile() {
+    setBusy(true);
+    setMessage("");
+
+    try {
+      const selectedPath = await chooseFile();
+      if (!selectedPath) {
+        return;
+      }
+      setSshKeys(await gitscopeApi.addSshKey(selectedPath));
+    } catch (error) {
+      setMessage(commandErrorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeSshKey(key: SshKeyInfo) {
+    setBusy(true);
+    setMessage("");
+
+    try {
+      setSshKeys(await gitscopeApi.removeSshKey(key.path));
+    } catch (error) {
+      setMessage(commandErrorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteSshKey(key: SshKeyInfo) {
+    const confirmed = window.confirm(
+      `Delete ${key.name} and its public key from disk? This cannot be undone.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setBusy(true);
+    setMessage("");
+
+    try {
+      setSshKeys(await gitscopeApi.deleteSshKey(key.path));
+      setMessage(`Deleted ${key.name}.`);
+    } catch (error) {
+      setMessage(commandErrorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function generateSshKey(input: GenerateKeyInput): Promise<boolean> {
+    setBusy(true);
+    setMessage("");
+
+    try {
+      const created = await gitscopeApi.generateSshKey(input);
+      await refreshSshKeys();
+      setMessage(`Generated ${created.name}.`);
+      return true;
+    } catch (error) {
+      setMessage(commandErrorMessage(error));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function copyPublicKey(key: SshKeyInfo) {
+    try {
+      const contents = await gitscopeApi.readPublicKey(key.path);
+      await navigator.clipboard.writeText(contents);
+      setMessage(`Copied public key for ${key.name}.`);
+    } catch (error) {
+      setMessage(commandErrorMessage(error));
+    }
+  }
+
+  async function copyKeyPath(key: SshKeyInfo) {
+    try {
+      await navigator.clipboard.writeText(key.path);
+      setMessage("Copied key path to clipboard.");
+    } catch (error) {
+      setMessage(commandErrorMessage(error));
+    }
+  }
+
+  async function revealSshKey(key: SshKeyInfo) {
+    try {
+      await gitscopeApi.revealSshKey(key.path);
+    } catch (error) {
+      setMessage(commandErrorMessage(error));
+    }
+  }
+
   return {
     actions: {
       addProject,
@@ -382,11 +488,20 @@ export function useWorkspace() {
       deleteProfile,
       chooseSshKeyFile,
       setProfileForm,
+      refreshSshKeys,
+      addSshKey: addSshKeyFromFile,
+      removeSshKey,
+      deleteSshKey,
+      generateSshKey,
+      copyPublicKey,
+      copyKeyPath,
+      revealSshKey,
     },
     state: {
       profiles,
       profileForm,
       keyStatus,
+      sshKeys,
       projects,
       projectStatuses,
       openProject,
