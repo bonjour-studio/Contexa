@@ -25,12 +25,9 @@ type ProfilesSectionProps = {
  */
 export function ProfilesSection(props: ProfilesSectionProps) {
   return (
-    <>
-      <PageHeader
-        eyebrow="Reusable library"
-        title="Profiles"
-      />
+    <div className="page">
+      <PageHeader eyebrow="Reusable library" title="Profiles" />
       <ProfilesPanel {...props} />
-    </>
+    </div>
   );
 }

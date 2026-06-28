@@ -1,12 +1,5 @@
-import {
-  Edit3,
-  KeyRound,
-  RotateCcw,
-  Save,
-  Server,
-  Trash2,
-  User,
-} from "lucide-react";
+import { Edit3, KeyRound, RotateCcw, Save, Server, Trash2, User } from "lucide-react";
+import type { FormEvent, ReactNode } from "react";
 import { StatusBadge } from "../../components/StatusBadge";
 import {
   emptyProfile,
@@ -14,7 +7,6 @@ import {
   ProfileInput,
   SshKeyStatus,
 } from "../../domain/gitscope";
-import type { FormEvent } from "react";
 
 type ProfilesPanelProps = {
   profiles: GitIdentityProfile[];
@@ -39,111 +31,157 @@ export function ProfilesPanel({
   onEdit,
   onDelete,
 }: ProfilesPanelProps) {
+  const keyReady =
+    keyStatus?.exists && keyStatus.isFile && keyStatus.readable;
+
   return (
-    <div className="profiles-layout">
-      <section className="panel profile-editor">
-        <div className="panel-heading">
-          <div>
-            <span className="eyebrow">Profile</span>
-            <h3>{profileForm.id ? "Edit identity" : "Create identity"}</h3>
-          </div>
-        </div>
-
-        <form className="profile-form" onSubmit={onSave}>
-          <label>
-            Label
-            <input
-              value={profileForm.label}
-              onChange={(event) =>
-                onFormChange({ ...profileForm, label: event.currentTarget.value })
-              }
-              placeholder="Work"
-            />
-          </label>
-          <label>
-            user.name
-            <input
-              value={profileForm.userName}
-              onChange={(event) =>
-                onFormChange({
-                  ...profileForm,
-                  userName: event.currentTarget.value,
-                })
-              }
-              placeholder="Project Operator"
-            />
-          </label>
-          <label>
-            user.email
-            <input
-              value={profileForm.userEmail}
-              onChange={(event) =>
-                onFormChange({
-                  ...profileForm,
-                  userEmail: event.currentTarget.value,
-                })
-              }
-              placeholder="operator@example.com"
-            />
-          </label>
-          <label>
-            SSH private key path reference
-            <div className="inline-control">
-              <input
-                readOnly
-                value={profileForm.sshKeyPath}
-                placeholder="Choose an SSH key file"
-              />
-              <button
-                className="icon-only-button"
-                type="button"
-                onClick={onChooseSshKeyFile}
-                title="Choose SSH key file"
-              >
-                <KeyRound aria-hidden="true" size={17} />
-              </button>
-            </div>
-          </label>
-          <label>
-            Remote host
-            <input
-              value={profileForm.remoteHost}
-              onChange={(event) =>
-                onFormChange({
-                  ...profileForm,
-                  remoteHost: event.currentTarget.value,
-                })
-              }
-              placeholder="github.com"
-            />
-          </label>
-
-          {keyStatus && (
-            <div className="key-status">
-              <StatusBadge
-                status={
-                  keyStatus.exists && keyStatus.isFile && keyStatus.readable
-                    ? "passed"
-                    : "failed"
-                }
-                label={
-                  keyStatus.exists && keyStatus.isFile && keyStatus.readable
-                    ? "Key Ready"
-                    : "Key Issue"
-                }
-              />
-              <span
-                className="truncate"
-                title={keyStatus.message ?? keyStatus.expandedPath}
-              >
-                {keyStatus.message ?? keyStatus.expandedPath}
-              </span>
-            </div>
+    <>
+      <section className="section">
+        <div className="section-head">
+          <span className="section-label">Saved profiles</span>
+          {profiles.length > 0 && (
+            <span className="section-count">{profiles.length}</span>
           )}
+        </div>
+        <div className="group">
+          {profiles.length === 0 ? (
+            <div className="row">
+              <span className="empty-copy">No profiles saved yet.</span>
+            </div>
+          ) : (
+            profiles.map((profile) => (
+              <div className="list-row" key={profile.id}>
+                <button
+                  className="row-open"
+                  onClick={() => onEdit(profile)}
+                  type="button"
+                >
+                  <User className="row-lead" aria-hidden="true" size={16} />
+                  <span className="row-title">{profile.label}</span>
+                  <span className="row-sub">{profile.userName}</span>
+                </button>
+                <div className="row-trailing">
+                  <div className="row-meta">
+                    <span>
+                      <Server aria-hidden="true" size={13} />
+                      {profile.remoteHost}
+                    </span>
+                  </div>
+                  <div className="row-actions">
+                    <button
+                      className="icon-only-button"
+                      type="button"
+                      onClick={() => onEdit(profile)}
+                      title="Edit profile"
+                    >
+                      <Edit3 aria-hidden="true" size={15} />
+                    </button>
+                    <button
+                      className="danger-action icon-only-button"
+                      type="button"
+                      onClick={() => onDelete(profile)}
+                      title="Delete profile"
+                    >
+                      <Trash2 aria-hidden="true" size={15} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-head">
+          <span className="section-label">
+            {profileForm.id ? "Edit profile" : "New profile"}
+          </span>
+        </div>
+        <form className="profile-form" onSubmit={onSave}>
+          <div className="group">
+            <ControlRow label="Label">
+              <input
+                value={profileForm.label}
+                onChange={(event) =>
+                  onFormChange({ ...profileForm, label: event.currentTarget.value })
+                }
+                placeholder="Work"
+              />
+            </ControlRow>
+            <ControlRow label="user.name">
+              <input
+                value={profileForm.userName}
+                onChange={(event) =>
+                  onFormChange({
+                    ...profileForm,
+                    userName: event.currentTarget.value,
+                  })
+                }
+                placeholder="Project Operator"
+              />
+            </ControlRow>
+            <ControlRow label="user.email">
+              <input
+                value={profileForm.userEmail}
+                onChange={(event) =>
+                  onFormChange({
+                    ...profileForm,
+                    userEmail: event.currentTarget.value,
+                  })
+                }
+                placeholder="operator@example.com"
+              />
+            </ControlRow>
+            <ControlRow label="SSH key">
+              <div className="inline-control">
+                <input
+                  readOnly
+                  value={profileForm.sshKeyPath}
+                  placeholder="Choose an SSH key file"
+                  title={profileForm.sshKeyPath || undefined}
+                />
+                <button
+                  className="icon-only-button"
+                  type="button"
+                  onClick={onChooseSshKeyFile}
+                  title="Choose SSH key file"
+                >
+                  <KeyRound aria-hidden="true" size={15} />
+                </button>
+              </div>
+            </ControlRow>
+            <ControlRow label="Remote host">
+              <input
+                value={profileForm.remoteHost}
+                onChange={(event) =>
+                  onFormChange({
+                    ...profileForm,
+                    remoteHost: event.currentTarget.value,
+                  })
+                }
+                placeholder="github.com"
+              />
+            </ControlRow>
+            {keyStatus && (
+              <div className="row">
+                <StatusBadge
+                  status={keyReady ? "passed" : "failed"}
+                  label={keyReady ? "Key ready" : "Key issue"}
+                />
+                <span
+                  className="field-value"
+                  title={keyStatus.message ?? keyStatus.expandedPath}
+                >
+                  {keyStatus.message ?? keyStatus.expandedPath}
+                </span>
+              </div>
+            )}
+          </div>
 
           <div className="form-actions">
             <button className="primary-action icon-button" disabled={busy} type="submit">
-              <Save aria-hidden="true" size={17} />
+              <Save aria-hidden="true" size={15} />
               <span>Save</span>
             </button>
             <button
@@ -152,61 +190,21 @@ export function ProfilesPanel({
               onClick={() => onFormChange(emptyProfile)}
               disabled={busy}
             >
-              <RotateCcw aria-hidden="true" size={17} />
+              <RotateCcw aria-hidden="true" size={15} />
               <span>Clear</span>
             </button>
           </div>
         </form>
       </section>
+    </>
+  );
+}
 
-      <section className="panel profiles-list-panel">
-        <div className="panel-heading compact">
-          <div>
-            <span className="eyebrow">Saved Profiles</span>
-            <h3>{profiles.length} identities</h3>
-          </div>
-        </div>
-
-        <div className="profile-list">
-          {profiles.length === 0 ? (
-            <p className="empty-copy">No profiles saved.</p>
-          ) : (
-            profiles.map((profile) => (
-              <article className="profile-row" key={profile.id}>
-                <div className="profile-row-main">
-                  <User aria-hidden="true" size={17} />
-                  <div>
-                    <h4>{profile.label}</h4>
-                    <p>{profile.userName}</p>
-                    <span>
-                      <Server aria-hidden="true" size={14} />
-                      {profile.remoteHost}
-                    </span>
-                  </div>
-                </div>
-                <div className="row-actions">
-                  <button
-                    className="icon-only-button"
-                    type="button"
-                    onClick={() => onEdit(profile)}
-                    title="Edit profile"
-                  >
-                    <Edit3 aria-hidden="true" size={16} />
-                  </button>
-                  <button
-                    className="danger-action icon-only-button"
-                    type="button"
-                    onClick={() => onDelete(profile)}
-                    title="Delete profile"
-                  >
-                    <Trash2 aria-hidden="true" size={16} />
-                  </button>
-                </div>
-              </article>
-            ))
-          )}
-        </div>
-      </section>
+function ControlRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="row control">
+      <span className="field-label">{label}</span>
+      {children}
     </div>
   );
 }

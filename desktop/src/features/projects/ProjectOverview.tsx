@@ -85,24 +85,22 @@ export function ProjectOverview({
         <div className="group">
           <div className="row control">
             <span className="field-label">Profile</span>
-            <div className="field-value">
-              <div className="select-shell">
-                <Users aria-hidden="true" size={15} />
-                <select
-                  disabled={busy || profiles.length === 0}
-                  onChange={(event) =>
-                    onLinkProfile(event.currentTarget.value || null)
-                  }
-                  value={linkedProfile?.id ?? ""}
-                >
-                  <option value="">No profile</option>
-                  {profiles.map((profile) => (
-                    <option key={profile.id} value={profile.id}>
-                      {profile.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="select-shell">
+              <Users aria-hidden="true" size={15} />
+              <select
+                disabled={busy || profiles.length === 0}
+                onChange={(event) =>
+                  onLinkProfile(event.currentTarget.value || null)
+                }
+                value={linkedProfile?.id ?? ""}
+              >
+                <option value="">No profile</option>
+                {profiles.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
