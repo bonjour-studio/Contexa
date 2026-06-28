@@ -116,23 +116,18 @@ export function useWorkspace() {
     setMessage("");
 
     try {
-      const [storedProfiles, storedProjects, current, applyHistory] =
-        await Promise.all([
-          gitscopeApi.listProfiles(),
-          gitscopeApi.listProjects(),
-          gitscopeApi.getCurrentProject(),
-          gitscopeApi.listApplyHistory(),
-        ]);
+      const [storedProfiles, storedProjects, applyHistory] = await Promise.all([
+        gitscopeApi.listProfiles(),
+        gitscopeApi.listProjects(),
+        gitscopeApi.listApplyHistory(),
+      ]);
 
       setProfiles(storedProfiles);
       setProjects(storedProjects);
       setHistory(applyHistory);
       void scanProjects(storedProjects);
-
-      // Restore the last-opened project straight into its workbench.
-      if (current) {
-        setOpenProjectId(current.id);
-      }
+      // The app always opens on the Projects list; opening a project is
+      // in-memory navigation, not a persisted selection.
     } catch (error) {
       setMessage(commandErrorMessage(error));
     } finally {
@@ -215,23 +210,15 @@ export function useWorkspace() {
     }
   }
 
-  async function openProjectById(project: Project) {
-    setBusy(true);
+  function openProjectById(project: Project) {
+    // Navigate to the project's detail page (in-memory only) and refresh its
+    // git status in the background; no persisted "current project".
     setMessage("");
-
-    try {
-      await gitscopeApi.setCurrentProject(project.id);
-      await refreshProjectStatus(project);
-      setOpenProjectId(project.id);
-    } catch (error) {
-      setMessage(commandErrorMessage(error));
-    } finally {
-      setBusy(false);
-    }
+    setOpenProjectId(project.id);
+    void refreshProjectStatus(project);
   }
 
   function closeProject() {
-    // Keep the persisted current project as the last-opened one for restore.
     setOpenProjectId(null);
     setMessage("");
   }

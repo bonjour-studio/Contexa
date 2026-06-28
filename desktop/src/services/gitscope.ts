@@ -48,12 +48,6 @@ export const gitscopeApi = {
   removeProject(projectId: string) {
     return invoke<Project[]>("remove_project", { projectId });
   },
-  setCurrentProject(projectId: string | null) {
-    return invoke<Project | null>("set_current_project", { projectId });
-  },
-  getCurrentProject() {
-    return invoke<Project | null>("get_current_project");
-  },
   linkProfileToProject(projectId: string, profileId: string | null) {
     return invoke<Project>("link_profile_to_project", { projectId, profileId });
   },
