@@ -286,6 +286,7 @@ p {
 
 /* ===== Single-line truncation for machine strings (paths/urls/commands) ===== */
 .truncate {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

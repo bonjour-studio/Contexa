@@ -6,6 +6,7 @@ import {
   Terminal,
   Wifi,
 } from "lucide-react";
+import { PathText } from "../../components/PathText";
 import { StatusBadge, StatusDot } from "../../components/StatusBadge";
 import type {
   ApplyPlan,
@@ -89,7 +90,9 @@ export function GitIdentityPanel({
         <dl className="compact-list">
           <div>
             <dt>Repository</dt>
-            <dd>{status.repository.rootPath}</dd>
+            <dd>
+              <PathText value={status.repository.rootPath} tilde />
+            </dd>
           </div>
           <div>
             <dt>Writes</dt>
@@ -97,7 +100,13 @@ export function GitIdentityPanel({
           </div>
           <div>
             <dt>SSH command</dt>
-            <dd>{applyPlan?.sshCommand ?? "Waiting for plan"}</dd>
+            <dd>
+              {applyPlan?.sshCommand ? (
+                <PathText value={applyPlan.sshCommand} />
+              ) : (
+                "Waiting for plan"
+              )}
+            </dd>
           </div>
         </dl>
 

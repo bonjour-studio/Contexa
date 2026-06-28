@@ -68,6 +68,7 @@ export function ProjectWorkbench({
     <>
       <PageHeader
         eyebrow={shortPath(project.path)}
+        eyebrowAsPath
         title={project.name}
         actions={
           <button className="icon-button" onClick={onBack} type="button">

@@ -1,10 +1,22 @@
+/** Collapse the user's home directory to `~` (macOS /Users, Linux /home). */
+export function tildify(path: string) {
+  return path.replace(/^\/(?:Users|home)\/[^/]+(?=\/|$)/, "~");
+}
+
+/**
+ * Compact a path for tight labels: collapse home to `~` and, when still deep,
+ * keep the leaf two segments (`~/…/Code/Contexa`). The leaf is what identifies
+ * the repo, so it is always preserved; the full path goes in a tooltip.
+ */
 export function shortPath(path: string) {
-  const parts = path.split("/").filter(Boolean);
+  const tilde = tildify(path);
+  const parts = tilde.split("/").filter(Boolean);
   if (parts.length <= 3) {
-    return path;
+    return tilde;
   }
 
-  return `.../${parts.slice(-3).join("/")}`;
+  const tail = parts.slice(-2).join("/");
+  return tilde.startsWith("~") ? `~/…/${tail}` : `…/${tail}`;
 }
 
 export function formatDate(epochSeconds: number) {

@@ -132,7 +132,12 @@ export function ProfilesPanel({
                     : "Key Issue"
                 }
               />
-              <span>{keyStatus.message ?? keyStatus.expandedPath}</span>
+              <span
+                className="truncate"
+                title={keyStatus.message ?? keyStatus.expandedPath}
+              >
+                {keyStatus.message ?? keyStatus.expandedPath}
+              </span>
             </div>
           )}
 

@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { PathText } from "../../components/PathText";
 import { StatusBadge } from "../../components/StatusBadge";
 import type {
   ApplyHistoryItem,
@@ -83,13 +84,25 @@ export function ProjectOverview({
               {status?.config.userName ?? "Unset"}
             </DetailItem>
             <DetailItem icon={Mail} label="user.email">
-              {status?.config.userEmail ?? "Unset"}
+              {status?.config.userEmail ? (
+                <PathText value={status.config.userEmail} mono={false} />
+              ) : (
+                "Unset"
+              )}
             </DetailItem>
             <DetailItem icon={KeyRound} label="SSH key">
-              {status?.config.inferredSshKeyPath ?? "Unset"}
+              {status?.config.inferredSshKeyPath ? (
+                <PathText value={status.config.inferredSshKeyPath} tilde />
+              ) : (
+                "Unset"
+              )}
             </DetailItem>
             <DetailItem icon={Server} label="Remote">
-              {status?.repository.remote?.url ?? "No remote"}
+              {status?.repository.remote?.url ? (
+                <PathText value={status.repository.remote.url} />
+              ) : (
+                "No remote"
+              )}
             </DetailItem>
           </dl>
         </section>
@@ -132,7 +145,7 @@ export function ProjectOverview({
                 {linkedProfile.userName}
               </DetailItem>
               <DetailItem icon={Mail} label="Email">
-                {linkedProfile.userEmail}
+                <PathText value={linkedProfile.userEmail} mono={false} />
               </DetailItem>
               <DetailItem icon={Server} label="Host">
                 {linkedProfile.remoteHost}
@@ -187,7 +200,7 @@ function MetricTile({
       <Icon aria-hidden="true" size={18} />
       <div>
         <span>{label}</span>
-        <strong>{value}</strong>
+        <strong title={value}>{value}</strong>
       </div>
     </article>
   );

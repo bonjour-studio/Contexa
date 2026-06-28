@@ -106,7 +106,9 @@ function ProjectCard({
           <FolderGit2 aria-hidden="true" size={18} />
           <div>
             <h3>{project.name}</h3>
-            <p>{shortPath(project.path)}</p>
+            <p className="truncate" title={project.path}>
+              {shortPath(project.path)}
+            </p>
           </div>
         </div>
         <dl className="project-card-meta">
