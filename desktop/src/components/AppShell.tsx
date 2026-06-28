@@ -29,7 +29,7 @@ export function AppShell({ section, children, onSectionChange }: AppShellProps) 
   return (
     <main className="app-shell">
       <aside className="sidebar">
-        <div className="brand-block">
+        <div className="brand-block" data-tauri-drag-region>
           <span className="brand-mark">Cx</span>
           <div>
             <h1>Contexa</h1>

@@ -1215,6 +1215,15 @@ pub fn run() {
                 })
                 .build(app)?;
 
+            // Ensure the main window comes up visible and focused on the current
+            // space at launch (it can otherwise stay hidden after the tray-hide
+            // flow, or open behind on a different space).
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+
             Ok(())
         })
         .on_window_event(|window, event| {

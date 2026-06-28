@@ -12,8 +12,8 @@ type PageHeaderProps = {
  */
 export function PageHeader({ eyebrow, title, actions }: PageHeaderProps) {
   return (
-    <header className="topbar">
-      <div className="topbar-title">
+    <header className="topbar" data-tauri-drag-region>
+      <div className="topbar-title" data-tauri-drag-region>
         <span className="eyebrow">{eyebrow}</span>
         <h2>{title}</h2>
       </div>

@@ -1,7 +1,7 @@
 .app-shell {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(244, 246, 248, 0.86)),
-    var(--bg);
+  /* Transparent: the sidebar column reveals the window vibrancy layer, the
+   * workspace column paints its own opaque background below. */
+  background: transparent;
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
   height: 100%;
@@ -9,7 +9,7 @@
 }
 
 .sidebar {
-  background: rgba(255, 255, 255, 0.88);
+  background: transparent;
   border-right: 1px solid var(--border);
   color: var(--text);
   display: flex;
@@ -17,7 +17,8 @@
   gap: 24px;
   min-height: 0;
   overflow-y: auto;
-  padding: 22px;
+  /* Extra top inset clears the overlaid macOS traffic lights. */
+  padding: 44px 18px 18px;
 }
 
 .brand-block {
@@ -92,6 +93,7 @@
 }
 
 .workspace {
+  background: var(--bg);
   container: workspace / inline-size;
   display: grid;
   gap: 18px;
