@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell, type AppSection } from "./components/AppShell";
 import { ProfilesSection } from "./features/profiles/ProfilesSection";
 import { ProjectsSection } from "./features/projects/ProjectsSection";
@@ -8,6 +8,14 @@ import { useWorkspace } from "./hooks/useWorkspace";
 function App() {
   const [section, setSection] = useState<AppSection>("projects");
   const { actions, state } = useWorkspace();
+
+  // Suppress the default WebView context menu (Reload / Inspect Element) so the
+  // app feels native; specific elements opt back in with their own menus.
+  useEffect(() => {
+    const blockContextMenu = (event: MouseEvent) => event.preventDefault();
+    document.addEventListener("contextmenu", blockContextMenu);
+    return () => document.removeEventListener("contextmenu", blockContextMenu);
+  }, []);
 
   return (
     <AppShell section={section} onSectionChange={setSection}>
