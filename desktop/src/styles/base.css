@@ -153,7 +153,29 @@ body {
   margin: 0;
   background: transparent;
   color: var(--text);
+  cursor: default;
   font-size: var(--text-base);
+  /* Native chrome: UI text isn't selectable. This also lets window drag
+   * regions work — otherwise a drag over selectable text is hijacked into a
+   * text selection by the webview. Selection is re-enabled on values below. */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Re-enable selection only for content a user would copy: field values
+ * (paths/emails/URLs/commands), code blocks, and editable inputs. */
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.field-value,
+.diff-view,
+.command-output {
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* ===== Native controls ===== */

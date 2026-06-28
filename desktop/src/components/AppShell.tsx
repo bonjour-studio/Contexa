@@ -28,7 +28,7 @@ type AppShellProps = {
 export function AppShell({ section, children, onSectionChange }: AppShellProps) {
   return (
     <main className="app-shell">
-      <aside className="sidebar">
+      <aside className="sidebar" data-tauri-drag-region>
         <div className="brand-block" data-tauri-drag-region>
           <span className="brand-mark">Cx</span>
           <div>

@@ -22,13 +22,15 @@ export function PageHeader({
     <header className="topbar" data-tauri-drag-region>
       <div className="topbar-title" data-tauri-drag-region>
         {eyebrowAsPath ? (
-          <span className="eyebrow-path truncate" title={eyebrow}>
+          <span className="eyebrow-path truncate" title={eyebrow} data-tauri-drag-region>
             {eyebrow}
           </span>
         ) : (
-          <span className="eyebrow">{eyebrow}</span>
+          <span className="eyebrow" data-tauri-drag-region>
+            {eyebrow}
+          </span>
         )}
-        <h2>{title}</h2>
+        <h2 data-tauri-drag-region>{title}</h2>
       </div>
       {actions}
     </header>
