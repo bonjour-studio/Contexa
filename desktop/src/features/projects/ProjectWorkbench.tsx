@@ -65,14 +65,14 @@ export function ProjectWorkbench({
   const [tab, setTab] = useState<WorkbenchTab>("overview");
 
   return (
-    <>
+    <div className="page">
       <PageHeader
         eyebrow={shortPath(project.path)}
         eyebrowAsPath
         title={project.name}
         actions={
           <button className="icon-button" onClick={onBack} type="button">
-            <ArrowLeft aria-hidden="true" size={17} />
+            <ArrowLeft aria-hidden="true" size={15} />
             <span>All projects</span>
           </button>
         }
@@ -119,6 +119,6 @@ export function ProjectWorkbench({
           onGoToOverview={() => setTab("overview")}
         />
       )}
-    </>
+    </div>
   );
 }

@@ -1,14 +1,5 @@
-import {
-  GitBranch,
-  History,
-  KeyRound,
-  Mail,
-  Server,
-  ShieldCheck,
-  User,
-  Users,
-} from "lucide-react";
-import type { ReactNode } from "react";
+import { Users } from "lucide-react";
+import { FieldRow } from "../../components/Field";
 import { PathText } from "../../components/PathText";
 import { StatusBadge } from "../../components/StatusBadge";
 import type {
@@ -49,177 +40,114 @@ export function ProjectOverview({
   const identityBadge = identityState === "matched" && status ? "passed" : "warning";
 
   return (
-    <div className="overview-stack">
-      <section className="status-strip">
-        <MetricTile
-          icon={GitBranch}
-          label="Branch"
-          value={status?.repository.currentBranch ?? "No branch"}
-        />
-        <MetricTile
-          icon={Server}
-          label="Remote"
-          value={status?.repository.remote?.host ?? "No remote"}
-        />
-        <MetricTile icon={ShieldCheck} label="Identity" value={identityLabel} />
-        <MetricTile
-          icon={History}
-          label="Applies"
-          value={String(history.length)}
-        />
+    <>
+      <section className="section">
+        <div className="section-head">
+          <span className="section-label">Repository</span>
+          {status && <StatusBadge status="passed" label="Git ready" />}
+        </div>
+        <div className="group">
+          <FieldRow label="Branch">
+            {status?.repository.currentBranch ?? "No branch"}
+          </FieldRow>
+          <FieldRow label="user.name">{status?.config.userName ?? "Unset"}</FieldRow>
+          <FieldRow label="user.email">
+            {status?.config.userEmail ? (
+              <PathText value={status.config.userEmail} mono={false} />
+            ) : (
+              "Unset"
+            )}
+          </FieldRow>
+          <FieldRow label="SSH key">
+            {status?.config.inferredSshKeyPath ? (
+              <PathText value={status.config.inferredSshKeyPath} tilde />
+            ) : (
+              "Unset"
+            )}
+          </FieldRow>
+          <FieldRow label="Remote">
+            {status?.repository.remote?.url ? (
+              <PathText value={status.repository.remote.url} />
+            ) : (
+              "No remote"
+            )}
+          </FieldRow>
+        </div>
       </section>
 
-      <div className="panel-grid">
-        <section className="panel panel-wide">
-          <div className="panel-heading">
-            <div>
-              <span className="eyebrow">Local Git Config</span>
-              <h3>Repository identity</h3>
-            </div>
+      <section className="section">
+        <div className="section-head">
+          <span className="section-label">Identity</span>
+          {linkedProfile && status && (
             <StatusBadge status={identityBadge} label={identityLabel} />
-          </div>
-
-          <dl className="identity-grid">
-            <DetailItem icon={User} label="user.name">
-              {status?.config.userName ?? "Unset"}
-            </DetailItem>
-            <DetailItem icon={Mail} label="user.email">
-              {status?.config.userEmail ? (
-                <PathText value={status.config.userEmail} mono={false} />
-              ) : (
-                "Unset"
-              )}
-            </DetailItem>
-            <DetailItem icon={KeyRound} label="SSH key">
-              {status?.config.inferredSshKeyPath ? (
-                <PathText value={status.config.inferredSshKeyPath} tilde />
-              ) : (
-                "Unset"
-              )}
-            </DetailItem>
-            <DetailItem icon={Server} label="Remote">
-              {status?.repository.remote?.url ? (
-                <PathText value={status.repository.remote.url} />
-              ) : (
-                "No remote"
-              )}
-            </DetailItem>
-          </dl>
-        </section>
-
-        <section className="panel">
-          <div className="panel-heading compact">
-            <div>
-              <span className="eyebrow">Linked Profile</span>
-              <h3>{linkedProfile?.label ?? "None"}</h3>
+          )}
+        </div>
+        <div className="group">
+          <div className="row control">
+            <span className="field-label">Profile</span>
+            <div className="field-value">
+              <div className="select-shell">
+                <Users aria-hidden="true" size={15} />
+                <select
+                  disabled={busy || profiles.length === 0}
+                  onChange={(event) =>
+                    onLinkProfile(event.currentTarget.value || null)
+                  }
+                  value={linkedProfile?.id ?? ""}
+                >
+                  <option value="">No profile</option>
+                  {profiles.map((profile) => (
+                    <option key={profile.id} value={profile.id}>
+                      {profile.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            {linkedProfile && status && (
-              <StatusBadge status={identityBadge} label={identityLabel} />
-            )}
           </div>
-
-          <label>
-            Apply identity from
-            <div className="select-shell">
-              <Users aria-hidden="true" size={16} />
-              <select
-                disabled={busy || profiles.length === 0}
-                onChange={(event) =>
-                  onLinkProfile(event.currentTarget.value || null)
-                }
-                value={linkedProfile?.id ?? ""}
-              >
-                <option value="">No profile</option>
-                {profiles.map((profile) => (
-                  <option key={profile.id} value={profile.id}>
-                    {profile.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </label>
 
           {linkedProfile ? (
-            <dl className="compact-list">
-              <DetailItem icon={User} label="Name">
-                {linkedProfile.userName}
-              </DetailItem>
-              <DetailItem icon={Mail} label="Email">
+            <>
+              <FieldRow label="Name">{linkedProfile.userName}</FieldRow>
+              <FieldRow label="Email">
                 <PathText value={linkedProfile.userEmail} mono={false} />
-              </DetailItem>
-              <DetailItem icon={Server} label="Host">
-                {linkedProfile.remoteHost}
-              </DetailItem>
-            </dl>
+              </FieldRow>
+              <FieldRow label="Host">{linkedProfile.remoteHost}</FieldRow>
+            </>
           ) : (
-            <p className="empty-copy">
-              {profiles.length === 0
-                ? "Create a profile under Profiles, then link it here."
-                : "Link a profile to compare and apply its git identity."}
-            </p>
-          )}
-        </section>
-
-        <section className="panel">
-          <div className="panel-heading compact">
-            <div>
-              <span className="eyebrow">Apply History</span>
-              <h3>This project</h3>
+            <div className="row">
+              <span className="empty-copy">
+                {profiles.length === 0
+                  ? "Create a profile under Profiles, then link it here."
+                  : "Link a profile to compare and apply its git identity."}
+              </span>
             </div>
-          </div>
+          )}
+        </div>
+      </section>
 
+      <section className="section">
+        <div className="section-head">
+          <span className="section-label">Recent activity</span>
+          {history.length > 0 && (
+            <span className="section-count">{history.length}</span>
+          )}
+        </div>
+        <div className="group">
           {history.length === 0 ? (
-            <p className="empty-copy">No identity applied yet.</p>
-          ) : (
-            <div className="history-list">
-              {history.slice(0, 5).map((item) => (
-                <article key={item.id} className="history-item">
-                  <strong>{item.profileLabel}</strong>
-                  <time>{formatDate(item.appliedAt)}</time>
-                </article>
-              ))}
+            <div className="row">
+              <span className="empty-copy">No identity applied yet.</span>
             </div>
+          ) : (
+            history.slice(0, 6).map((item) => (
+              <div className="row" key={item.id}>
+                <span className="field-value">{item.profileLabel}</span>
+                <time className="row-time">{formatDate(item.appliedAt)}</time>
+              </div>
+            ))
           )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function MetricTile({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof GitBranch;
-  label: string;
-  value: string;
-}) {
-  return (
-    <article className="metric-tile">
-      <Icon aria-hidden="true" size={18} />
-      <div>
-        <span>{label}</span>
-        <strong title={value}>{value}</strong>
-      </div>
-    </article>
-  );
-}
-
-function DetailItem({
-  children,
-  icon: Icon,
-  label,
-}: {
-  children: ReactNode;
-  icon: typeof User;
-  label: string;
-}) {
-  return (
-    <div className="detail-item">
-      <Icon aria-hidden="true" size={16} />
-      <dt>{label}</dt>
-      <dd>{children}</dd>
-    </div>
+        </div>
+      </section>
+    </>
   );
 }
