@@ -297,7 +297,9 @@ export function useWorkspace() {
     }
   }
 
-  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+  async function saveProfile(
+    event: FormEvent<HTMLFormElement>,
+  ): Promise<boolean> {
     event.preventDefault();
     setBusy(true);
     setMessage("");
@@ -308,8 +310,10 @@ export function useWorkspace() {
       setProfileForm(emptyProfile);
       setKeyStatus(null);
       setMessage(`Saved profile ${saved.label}.`);
+      return true;
     } catch (error) {
       setMessage(commandErrorMessage(error));
+      return false;
     } finally {
       setBusy(false);
     }
