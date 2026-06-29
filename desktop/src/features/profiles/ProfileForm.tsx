@@ -1,27 +1,37 @@
 import { KeyRound, RotateCcw, Save } from "lucide-react";
 import type { FormEvent } from "react";
 import { ControlRow } from "../../components/Field";
-import { StatusBadge } from "../../components/StatusBadge";
-import { emptyProfile, ProfileInput, SshKeyStatus } from "../../domain/gitscope";
+import { emptyProfile, ProfileInput, SshKeyInfo } from "../../domain/gitscope";
 
 type ProfileFormProps = {
   profileForm: ProfileInput;
-  keyStatus: SshKeyStatus | null;
+  sshKeys: SshKeyInfo[];
   busy: boolean;
   onFormChange: (profile: ProfileInput) => void;
   onSave: (event: FormEvent<HTMLFormElement>) => void;
-  onChooseSshKeyFile: () => void;
 };
 
 export function ProfileForm({
   profileForm,
-  keyStatus,
+  sshKeys,
   busy,
   onFormChange,
   onSave,
-  onChooseSshKeyFile,
 }: ProfileFormProps) {
-  const keyReady = keyStatus?.exists && keyStatus.isFile && keyStatus.readable;
+  const keyOptions = sshKeys.map((key) => ({
+    value: key.path,
+    label: key.keyType ? `${key.name} · ${key.keyType}` : key.name,
+  }));
+  // Keep a profile's existing key selectable even if it is not in the scan.
+  if (
+    profileForm.sshKeyPath &&
+    !sshKeys.some((key) => key.path === profileForm.sshKeyPath)
+  ) {
+    keyOptions.unshift({
+      value: profileForm.sshKeyPath,
+      label: profileForm.sshKeyPath,
+    });
+  }
 
   return (
     <form className="profile-form" onSubmit={onSave}>
@@ -58,21 +68,24 @@ export function ProfileForm({
             />
           </ControlRow>
           <ControlRow label="SSH key">
-            <div className="inline-control">
-              <input
-                readOnly
+            <div className="select-shell">
+              <KeyRound aria-hidden="true" size={15} />
+              <select
                 value={profileForm.sshKeyPath}
-                placeholder="Choose an SSH key file"
-                title={profileForm.sshKeyPath || undefined}
-              />
-              <button
-                className="icon-only-button"
-                type="button"
-                onClick={onChooseSshKeyFile}
-                title="Choose SSH key file"
+                onChange={(event) =>
+                  onFormChange({
+                    ...profileForm,
+                    sshKeyPath: event.currentTarget.value,
+                  })
+                }
               >
-                <KeyRound aria-hidden="true" size={15} />
-              </button>
+                <option value="">Select an SSH key…</option>
+                {keyOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </ControlRow>
           <ControlRow label="Remote host">
@@ -84,21 +97,13 @@ export function ProfileForm({
               placeholder="github.com"
             />
           </ControlRow>
-          {keyStatus && (
-            <div className="row">
-              <StatusBadge
-                status={keyReady ? "passed" : "failed"}
-                label={keyReady ? "Key ready" : "Key issue"}
-              />
-              <span
-                className="field-value"
-                title={keyStatus.message ?? keyStatus.expandedPath}
-              >
-                {keyStatus.message ?? keyStatus.expandedPath}
-              </span>
-            </div>
-          )}
         </div>
+        {sshKeys.length === 0 && (
+          <p className="empty-copy">
+            No SSH keys yet — add or generate one under SSH Keys, then pick it
+            here.
+          </p>
+        )}
       </section>
 
       <div className="form-actions">

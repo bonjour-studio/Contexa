@@ -5,7 +5,7 @@ import {
   emptyProfile,
   GitIdentityProfile,
   ProfileInput,
-  SshKeyStatus,
+  SshKeyInfo,
 } from "../../domain/gitscope";
 import { ProfileForm } from "./ProfileForm";
 import { ProfileList } from "./ProfileList";
@@ -13,11 +13,10 @@ import { ProfileList } from "./ProfileList";
 type ProfilesSectionProps = {
   profiles: GitIdentityProfile[];
   profileForm: ProfileInput;
-  keyStatus: SshKeyStatus | null;
+  sshKeys: SshKeyInfo[];
   busy: boolean;
   onFormChange: (profile: ProfileInput) => void;
   onSave: (event: FormEvent<HTMLFormElement>) => Promise<boolean>;
-  onChooseSshKeyFile: () => void;
   onEdit: (profile: GitIdentityProfile) => void;
   onDelete: (profile: GitIdentityProfile) => void;
   editing: boolean;
@@ -32,11 +31,10 @@ type ProfilesSectionProps = {
 export function ProfilesSection({
   profiles,
   profileForm,
-  keyStatus,
+  sshKeys,
   busy,
   onFormChange,
   onSave,
-  onChooseSshKeyFile,
   onEdit,
   onDelete,
   editing,
@@ -78,11 +76,10 @@ export function ProfilesSection({
         />
         <ProfileForm
           profileForm={profileForm}
-          keyStatus={keyStatus}
+          sshKeys={sshKeys}
           busy={busy}
           onFormChange={onFormChange}
           onSave={submit}
-          onChooseSshKeyFile={onChooseSshKeyFile}
         />
       </div>
     );

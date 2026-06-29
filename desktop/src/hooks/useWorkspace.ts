@@ -11,7 +11,6 @@ import {
   Project,
   RepositoryStatus,
   SshKeyInfo,
-  SshKeyStatus,
 } from "../domain/gitscope";
 import { commandErrorMessage, gitscopeApi } from "../services/gitscope";
 import { chooseDirectory, chooseFile } from "../services/dialog";
@@ -25,7 +24,6 @@ import { chooseDirectory, chooseFile } from "../services/dialog";
 export function useWorkspace() {
   const [profiles, setProfiles] = useState<GitIdentityProfile[]>([]);
   const [profileForm, setProfileForm] = useState<ProfileInput>(emptyProfile);
-  const [keyStatus, setKeyStatus] = useState<SshKeyStatus | null>(null);
   const [sshKeys, setSshKeys] = useState<SshKeyInfo[]>([]);
 
   const [projects, setProjects] = useState<Project[]>([]);
@@ -119,15 +117,18 @@ export function useWorkspace() {
     setMessage("");
 
     try {
-      const [storedProfiles, storedProjects, applyHistory] = await Promise.all([
-        gitscopeApi.listProfiles(),
-        gitscopeApi.listProjects(),
-        gitscopeApi.listApplyHistory(),
-      ]);
+      const [storedProfiles, storedProjects, applyHistory, keys] =
+        await Promise.all([
+          gitscopeApi.listProfiles(),
+          gitscopeApi.listProjects(),
+          gitscopeApi.listApplyHistory(),
+          gitscopeApi.listSshKeys(),
+        ]);
 
       setProfiles(storedProfiles);
       setProjects(storedProjects);
       setHistory(applyHistory);
+      setSshKeys(keys);
       void scanProjects(storedProjects);
       // The app always opens on the Projects list; opening a project is
       // in-memory navigation, not a persisted selection.
@@ -311,7 +312,6 @@ export function useWorkspace() {
       const saved = await gitscopeApi.saveProfile(profileForm);
       setProfiles(await gitscopeApi.listProfiles());
       setProfileForm(emptyProfile);
-      setKeyStatus(null);
       setMessage(`Saved profile ${saved.label}.`);
       return true;
     } catch (error) {
@@ -345,25 +345,6 @@ export function useWorkspace() {
     try {
       setProfiles(await gitscopeApi.deleteProfile(profile.id));
       setMessage(`Deleted profile ${profile.label}.`);
-    } catch (error) {
-      setMessage(commandErrorMessage(error));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function chooseSshKeyFile() {
-    setBusy(true);
-    setMessage("");
-
-    try {
-      const selectedPath = await chooseFile(profileForm.sshKeyPath || undefined);
-      if (!selectedPath) {
-        return;
-      }
-
-      setProfileForm({ ...profileForm, sshKeyPath: selectedPath });
-      setKeyStatus(await gitscopeApi.checkSshKey(selectedPath));
     } catch (error) {
       setMessage(commandErrorMessage(error));
     } finally {
@@ -486,7 +467,6 @@ export function useWorkspace() {
       saveProfile,
       editProfile,
       deleteProfile,
-      chooseSshKeyFile,
       setProfileForm,
       refreshSshKeys,
       addSshKey: addSshKeyFromFile,
@@ -500,7 +480,6 @@ export function useWorkspace() {
     state: {
       profiles,
       profileForm,
-      keyStatus,
       sshKeys,
       projects,
       projectStatuses,

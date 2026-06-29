@@ -59,11 +59,10 @@ function App() {
         <ProfilesSection
           profiles={state.profiles}
           profileForm={state.profileForm}
-          keyStatus={state.keyStatus}
+          sshKeys={state.sshKeys}
           busy={state.busy}
           onFormChange={actions.setProfileForm}
           onSave={actions.saveProfile}
-          onChooseSshKeyFile={() => void actions.chooseSshKeyFile()}
           onEdit={actions.editProfile}
           onDelete={(profile) => void actions.deleteProfile(profile)}
           editing={profilesEditing}
